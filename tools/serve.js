@@ -19,7 +19,7 @@ const server = http.createServer(async (request, response) => {
     ).replace(/^\/classroom-quest(?=\/)/, "");
     if (name.endsWith("/")) name += "index.html";
     if (
-      !/^\/(index\.html|tic-quest\.html|src\/[\w-]+\.js|assets\/(css\/[\w-]+\.css|images\/[\w-]+\.png))$/.test(
+      !/^\/(index\.html|LICENSE|src\/[\w-]+\.js|assets\/(css\/[\w-]+\.css|images\/[\w-]+\.png))$/.test(
         name,
       )
     ) {
@@ -29,7 +29,10 @@ const server = http.createServer(async (request, response) => {
     const file = path.join(root, name);
     const data = await fs.readFile(file);
     response.writeHead(200, {
-      "Content-Type": types[path.extname(file)],
+      "Content-Type":
+        name === "/LICENSE"
+          ? "text/plain; charset=utf-8"
+          : types[path.extname(file)],
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     });

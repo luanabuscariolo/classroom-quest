@@ -1,21 +1,82 @@
-MIT License
+LICENÇA TIC QUEST — USO PESSOAL E ESTUDO NÃO COMERCIAL
+Versão 1.0 — 23 de setembro de 2026
 
 Copyright (c) 2026 Lu Buscariolo
+Todos os direitos não expressamente concedidos são reservados.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. ÂMBITO
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Esta licença aplica-se ao código, documentação e demais materiais originais
+do projeto TIC Quest / Classroom Quest disponibilizados com este texto,
+na medida dos direitos detidos pela titular acima identificada
+(em conjunto, o "Projeto"). É uma licença própria e restritiva, não uma
+licença MIT nem uma licença de software livre ou open source.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. PERMISSÕES LIMITADAS
+
+É concedida gratuitamente uma autorização não exclusiva para executar,
+consultar, copiar e modificar o Projeto exclusivamente para uso pessoal,
+estudo, investigação e experiências de aprendizagem não comerciais.
+
+É permitido partilhar gratuitamente cópias e modificações para essas mesmas
+finalidades, desde que sejam cumpridas todas as condições desta licença.
+A disponibilização pública do código não concede permissões adicionais.
+
+3. PROIBIÇÃO DE VENDA E EXPLORAÇÃO COMERCIAL
+
+Não é permitido vender, revender, alugar, licenciar comercialmente ou
+explorar comercialmente o Projeto, no todo ou em parte, nem as suas cópias,
+adaptações ou versões modificadas.
+
+Em particular, não é permitido:
+a) cobrar pelo acesso, utilização, download ou distribuição do Projeto;
+b) oferecer o Projeto como serviço pago, incluindo assinaturas e SaaS;
+c) incorporar o Projeto ou partes dele em produtos, aplicações, cursos,
+   serviços ou pacotes comercializados;
+d) monetizar a sua disponibilização por publicidade, patrocínios comerciais
+   ou mecanismos equivalentes;
+e) utilizar o Projeto como ferramenta de operação de um negócio ou para
+   prestar serviços comerciais a terceiros.
+
+O facto de o Projeto ser fornecido gratuitamente ao utilizador final não
+autoriza uma exploração comercial por quem o disponibiliza. Alterar o nome,
+a aparência ou o código não elimina estas restrições.
+
+4. ATRIBUIÇÃO, MODIFICAÇÕES E DISTRIBUIÇÃO
+
+Todas as cópias e distribuições autorizadas devem conservar o aviso de
+copyright, este texto integral e os avisos de autoria e licença aplicáveis.
+As versões modificadas devem identificar claramente que foram alteradas,
+sem sugerir aprovação ou autoria da titular sobre essas alterações.
+
+Ao distribuir uma versão modificada, deve disponibilizar o respetivo código
+fonte e manter estas condições para o Projeto e as suas modificações.
+Não pode conceder a terceiros direitos comerciais ou outras permissões
+mais amplas sobre o Projeto do que aquelas que recebeu nesta licença.
+
+5. MATERIAIS DE TERCEIROS E DIREITOS ANTERIORES
+
+Dependências, bibliotecas, imagens e outros materiais de terceiros mantêm
+as suas próprias licenças. Este texto não altera essas licenças, não concede
+direitos que a titular não detenha e não restringe direitos concedidos
+separadamente pelos respetivos titulares.
+
+Esta licença aplica-se às versões distribuídas sob os seus termos. Não
+revoga permissões validamente concedidas para cópias ou versões anteriores
+sob outra licença, incluindo a MIT, nem limita exceções ou direitos que a
+lei aplicável não permita restringir.
+
+6. INCUMPRIMENTO
+
+O incumprimento destas condições faz cessar as permissões concedidas por
+esta licença. Qualquer utilização fora das permissões aqui previstas
+depende de autorização escrita e separada da titular dos direitos.
+
+7. AUSÊNCIA DE GARANTIAS E LIMITAÇÃO DE RESPONSABILIDADE
+
+O Projeto é fornecido "tal como está", sem garantias de funcionamento,
+adequação a uma finalidade, disponibilidade ou ausência de erros.
+Na medida permitida pela lei aplicável, a titular e os colaboradores não
+respondem por danos ou perdas decorrentes da utilização ou impossibilidade
+de utilização do Projeto. Nada neste texto exclui responsabilidades que
+não possam ser legalmente excluídas.

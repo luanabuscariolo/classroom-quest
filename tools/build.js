@@ -13,7 +13,7 @@ if (
 }
 await fs.rm(destination, { recursive: true, force: true });
 await fs.mkdir(destination);
-for (const name of ["index.html", ".nojekyll", "assets", "src"]) {
+for (const name of ["index.html", "LICENSE", ".nojekyll", "assets", "src"]) {
   await fs.cp(path.join(root, name), path.join(destination, name), {
     recursive: true,
   });

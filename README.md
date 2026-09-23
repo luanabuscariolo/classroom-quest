@@ -75,4 +75,12 @@ Não existe autenticação nem cifragem dos dados locais. Perfis de professor s�
 
 ## Licença
 
-Código sob a [licença MIT](LICENSE). A origem/licença das imagens herdadas deve ser confirmada pelo autor antes da distribuição pública.
+Este projeto utiliza uma [licença própria de uso pessoal e estudo não comercial](LICENSE).
+
+- Permitido: utilizar, estudar, modificar e partilhar gratuitamente para uso pessoal e estudo não comerciais, cumprindo a licença.
+- Proibido: vender, revender, cobrar acesso, oferecer como serviço pago ou incorporar o projeto em produtos e serviços comerciais, incluindo versões modificadas.
+- As cópias devem conservar a autoria e a licença; a distribuição de modificações deve incluir o respetivo código fonte sob as mesmas condições.
+
+É código disponibilizado para consulta e estudo com restrições de utilização; não é software livre/open source. Dependências e materiais de terceiros mantêm as suas próprias licenças. A origem/licença das imagens herdadas deve ser confirmada pelo autor antes da distribuição pública.
+
+A mudança não revoga permissões validamente concedidas a versões anteriormente distribuídas sob MIT. O texto é uma licença personalizada; uma revisão jurídica é recomendada antes de o utilizar como instrumento de proteção comercial.
