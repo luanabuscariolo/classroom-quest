@@ -1,0 +1,647 @@
+/* Arcade finish and feedback */
+:root {
+  --card: #302355;
+  --line: #8470b2;
+}
+.frame {
+  box-shadow:
+    5px 5px 0 #100925,
+    inset 0 0 0 2px #78609e,
+    0 12px 30px #10092533;
+}
+.brand h1 {
+  letter-spacing: 0.055em;
+  text-shadow:
+    2px 2px 0 #b7519b,
+    0 0 25px #b276db44;
+}
+.brand-mark {
+  box-shadow:
+    4px 4px 0 #b6722c,
+    0 0 22px #ffd35428;
+}
+.hud {
+  position: relative;
+  background: linear-gradient(110deg, #302653, #211b45);
+}
+.hp-block {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(#9bffcc, #56dfae);
+  box-shadow:
+    inset 0 -5px 0 #279c81,
+    0 0 12px #70f2be20;
+}
+.arena-top {
+  background: linear-gradient(90deg, #523276, #392754);
+}
+.front {
+  box-shadow:
+    0 4px 0 #120d30,
+    inset 0 0 12px #70f2be13;
+}
+.player {
+  background: linear-gradient(145deg, #3d2d65, #241b44);
+  border-top-color: #9b83b4;
+  box-shadow:
+    0 4px 0 #171029,
+    inset 0 1px 0 #b69cd41f;
+}
+.player-button {
+  position: relative;
+}
+.player .avatar {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px #09051e55;
+}
+.player:hover {
+  border-color: #bb9fdb;
+}
+.player.chosen {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 5px 0 #19102e,
+    0 0 19px #ffd35424;
+}
+.player.chosen .player-button {
+  background: linear-gradient(135deg, #705277, #53376a);
+}
+.player.chosen .player-name {
+  color: #fff5c2;
+}
+.pool-label {
+  background: #17122ce6;
+}
+.character-preview {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 40%, #84559677, transparent 65%),
+    repeating-linear-gradient(
+      0deg,
+      #302049 0,
+      #302049 4px,
+      #34234e 4px,
+      #34234e 8px
+    );
+}
+.character-preview .big-avatar {
+  width: 100px;
+  height: 90px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse, #c894e429, transparent 72%);
+}
+.selected-score {
+  display: inline-block;
+}
+.raffle {
+  background: linear-gradient(135deg, #714787, #482b69);
+}
+.raffle-button {
+  box-shadow:
+    0 6px 0 #a16529,
+    inset 0 2px 0 #fff6c0,
+    0 0 24px #ffd35420;
+}
+.button {
+  transition:
+    background 0.15s,
+    transform 0.1s,
+    box-shadow 0.1s;
+}
+.teams-button {
+  background: linear-gradient(120deg, #403366, #2a2450);
+}
+.life-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 35px;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+  border: 3px solid #c6ffe3;
+  background: #174e43;
+  box-shadow:
+    5px 5px 0 #100a29,
+    0 0 35px #70f2be33;
+  color: #b5ffdf;
+  padding: 15px 24px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  max-width: calc(100vw - 30px);
+  white-space: nowrap;
+}
+.life-toast[hidden] {
+  display: none;
+}
+.life-toast.loss {
+  background: #54213e;
+  border-color: #ff91bb;
+  color: #ffc0d8;
+  box-shadow:
+    5px 5px 0 #100a29,
+    0 0 35px #ff78b033;
+}
+.toast-icon {
+  font-size: 34px;
+  line-height: 1;
+}
+.toast-text {
+  font:
+    900 1.1rem ui-monospace,
+    monospace;
+}
+.toast-run {
+  animation: toast-in 1.65s ease both;
+}
+.hp-gain {
+  animation: hp-charge 0.8s ease;
+}
+.hp-loss {
+  animation: hp-break 0.65s ease;
+}
+.hud-hit {
+  animation: hud-hit 0.45s ease;
+}
+.hud-heal {
+  animation: hud-heal 0.8s ease;
+}
+.score-pop {
+  animation: score-pop 0.45s ease;
+}
+.points-float {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  font:
+    900 1.5rem ui-monospace,
+    monospace;
+  color: #ffe17c;
+  text-shadow: 2px 2px #4d244f;
+  animation: points-up 1s ease-out both;
+}
+.points-float.negative {
+  color: #ff91bb;
+}
+.draw-modal {
+  position: relative;
+  isolation: isolate;
+  text-align: center;
+  width: min(520px, 100%);
+  overflow: hidden;
+  padding: 28px;
+  border: 3px solid #b98ce8;
+  background: radial-gradient(ellipse at 50% 40%, #593579, #211638 78%);
+  box-shadow:
+    8px 8px 0 #0d0824,
+    0 0 60px #b785ed25;
+}
+.draw-label {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.8rem;
+  letter-spacing: 0.17em;
+}
+.draw-orbit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 172px;
+  height: 172px;
+  margin: 25px auto 22px;
+}
+.draw-orbit:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 3px dashed #c68de4;
+  border-radius: 50%;
+  animation: orbit 9s linear infinite;
+}
+.draw-orbit:after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 2px solid #8364b2;
+  border-radius: 50%;
+  box-shadow:
+    0 0 22px #ca85ed33,
+    inset 0 0 22px #ca85ed22;
+}
+.draw-avatar {
+  position: relative;
+  z-index: 1;
+  font-size: 85px;
+  line-height: 1.1;
+  filter: drop-shadow(0 7px 0 #160c36);
+}
+.shuffle-tick {
+  animation: shuffle-tick 0.12s ease-out;
+}
+.draw-name {
+  font:
+    900 clamp(1.4rem, 5vw, 2rem) ui-monospace,
+    monospace;
+  margin: 12px 0 6px;
+  color: #fff5dc;
+  overflow-wrap: anywhere;
+  min-height: 2.5rem;
+}
+.draw-seat {
+  color: #cdb4eb;
+  font-size: 0.8rem;
+}
+.suspense-track {
+  height: 12px;
+  border: 2px solid #bc89d7;
+  background: #150e2a;
+  margin: 24px 10px 14px;
+  padding: 2px;
+}
+.suspense-fill {
+  height: 100%;
+  width: 0;
+  background: var(--gold);
+  box-shadow: 0 0 9px #ffd35466;
+  transition: width 0.08s linear;
+}
+.draw-note {
+  color: #d7c6ea;
+  font-size: 0.9rem;
+  margin: 0 0 17px;
+}
+.draw-modal .button {
+  font-size: 0.8rem;
+}
+.winner-modal {
+  animation: winner-in 0.35s cubic-bezier(0.18, 0.9, 0.3, 1.2);
+  box-shadow:
+    8px 8px 0 #0d0824,
+    0 0 65px #ffd35426;
+}
+.winner-modal .big-avatar {
+  animation: winner-bounce 0.7s ease;
+}
+.winner-kicker {
+  color: #ffdd7c;
+}
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes shuffle-tick {
+  from {
+    transform: translateY(-9px) scale(0.9);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes hp-charge {
+  0% {
+    transform: scale(0.83);
+    filter: brightness(1.8);
+  }
+  45% {
+    transform: scale(1.08);
+    filter: brightness(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes hp-break {
+  0% {
+    transform: scale(1.06);
+    background: #ff78b0;
+  }
+  40% {
+    transform: translateY(4px) rotate(-3deg);
+    background: #7c355c;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes hud-hit {
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+@keyframes hud-heal {
+  40% {
+    box-shadow:
+      5px 5px 0 #100925,
+      inset 0 0 0 2px #70f2be,
+      0 0 30px #70f2be66;
+  }
+}
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 15px) scale(0.92);
+  }
+  15%,
+  78% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+}
+@keyframes score-pop {
+  40% {
+    transform: scale(1.25);
+    filter: brightness(1.3);
+  }
+}
+@keyframes points-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-65px) scale(1);
+  }
+}
+@keyframes winner-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes winner-bounce {
+  40% {
+    transform: translateY(-12px) rotate(-6deg);
+  }
+  65% {
+    transform: translateY(0) rotate(5deg);
+  }
+  85% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .draw-orbit:before,
+  .winner-modal,
+  .winner-modal .big-avatar,
+  .hp-gain,
+  .hp-loss,
+  .hud-hit,
+  .hud-heal,
+  .score-pop,
+  .points-float,
+  .toast-run {
+    animation: none !important;
+  }
+  .points-float {
+    display: none;
+  }
+  .player.flash {
+    transform: none;
+  }
+}
+
+.attention-button {
+  padding: 14px 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 1rem;
+}
+.attention-button span {
+  display: block;
+  font: 500 0.76rem system-ui;
+  margin-top: 5px;
+}
+.load-file {
+  display: block;
+  width: 100%;
+  border: 2px dashed #a48bc2;
+  padding: 15px;
+  background: #211637;
+  color: #eee1ff;
+  font-size: 0.95rem;
+}
+.load-file::file-selector-button {
+  padding: 10px;
+  border: 0;
+  background: #70f2be;
+  color: #152a29;
+  font-weight: 800;
+  margin-right: 10px;
+  cursor: pointer;
+}
+.load-status {
+  min-height: 48px;
+  padding: 12px;
+  background: #211637;
+  border-left: 3px solid #70f2be;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.load-status.error {
+  border-color: #ff78b0;
+  color: #ffc5dc;
+}
+.import-alternative {
+  margin-top: 18px;
+  color: #d8c6f0;
+  font-size: 0.86rem;
+}
+.import-alternative summary {
+  cursor: pointer;
+  padding: 7px 0;
+}
+.import-alternative textarea {
+  min-height: 120px;
+  margin: 10px 0;
+}
+.attention-modal {
+  text-align: center;
+  width: min(610px, 100%);
+  border-color: #ffd354;
+  background: radial-gradient(ellipse, #684e72, #2e204b 76%);
+}
+.attention-modal h2 {
+  font-size: 1.5rem;
+}
+.attention-number {
+  font:
+    900 clamp(5rem, 20vw, 9rem) ui-monospace,
+    monospace;
+  color: #ffd354;
+  line-height: 1.2;
+  text-shadow: 5px 5px 0 #aa5f57;
+}
+.attention-beat {
+  animation: attention-beat 0.45s ease-out;
+}
+.attention-progress {
+  height: 13px;
+  background: #160e2c;
+  border: 2px solid #b798c5;
+  margin: 10px auto 20px;
+  max-width: 380px;
+}
+.attention-fill {
+  height: 100%;
+  background: #ffd354;
+  width: 100%;
+  transition: width 0.15s linear;
+}
+.attention-decisions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.attention-decisions[hidden] {
+  display: none;
+}
+.attention-note {
+  color: #ddcde9;
+  font-size: 0.85rem;
+}
+.hud-stat small {
+  display: block;
+  color: #d6bfe6;
+  font-size: 0.72rem;
+  margin-top: 6px;
+}
+@keyframes attention-beat {
+  from {
+    transform: scale(1.25);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .attention-beat {
+    animation: none !important;
+  }
+}
+@media (max-width: 850px) {
+  .hud-stat {
+    display: flex;
+    grid-column: 1/-1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-left: 0;
+    border-top: 1px solid #6b5686;
+    padding: 10px 0 0;
+  }
+  .hud-stat strong {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+  .hud-stat small {
+    margin: 0;
+  }
+}
+
+/* Warning palette */
+.attention-modal {
+  position: relative;
+  overflow: hidden;
+  padding-top: 37px;
+  border-color: #ffcb48;
+  background: radial-gradient(ellipse at top, #78451d, #321c16 78%);
+  box-shadow:
+    8px 8px 0 #170c12,
+    0 0 60px #ff9e2524;
+}
+.attention-modal:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: repeating-linear-gradient(
+    135deg,
+    #ffd354 0,
+    #ffd354 15px,
+    #36231b 15px,
+    #36231b 30px
+  );
+}
+.attention-modal h2 {
+  color: #ffe5a2;
+}
+.attention-modal p {
+  color: #ffe0bd;
+}
+.attention-number {
+  color: #ffd456;
+  text-shadow: 5px 5px 0 #a13d1e;
+}
+.attention-progress {
+  border-color: #ffb346;
+  background: #341916;
+}
+.attention-fill {
+  background: linear-gradient(90deg, #ff952e, #ffe082);
+}
+.attention-modal .button:not(.mint):not(.pink) {
+  background: #513320;
+  border-color: #d48c49;
+}
+.attention-modal .button.pink {
+  background: #bd3836;
+  border-color: #ff9c87;
+}
+.attention-note {
+  color: #efd2b3 !important;
+}
+#attentionOverlay[data-level="urgent"] .attention-modal {
+  border-color: #ff7863;
+  background: radial-gradient(ellipse at top, #812e26, #351315 78%);
+  box-shadow:
+    8px 8px 0 #170c12,
+    0 0 60px #ff422724;
+}
+#attentionOverlay[data-level="urgent"] .attention-number {
+  color: #ff866c;
+  text-shadow: 5px 5px 0 #852c28;
+}
+#attentionOverlay[data-level="urgent"] .attention-fill {
+  background: #ff7355;
+}
+.attention-button {
+  background: linear-gradient(#ffd560, #ffad3e) !important;
+  border-color: #ffe89e !important;
+}

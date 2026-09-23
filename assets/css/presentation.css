@@ -1,0 +1,20 @@
+/* Projection-specific differences; shared appearance comes from styles.css. */
+body,
+.modal {
+  pointer-events: auto;
+}
+#projectionRoot > .game {
+  display: block;
+}
+.pool-label {
+  display: none !important;
+}
+#gameMain .topbar {
+  justify-content: space-between;
+}
+.player-button:focus {
+  outline: none;
+}
+.attention-number {
+  animation: none !important;
+}

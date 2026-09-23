@@ -1,0 +1,38 @@
+{
+  "name": "classroom-quest",
+  "version": "1.0.0",
+  "description": "Jogo de sala de aula para professores, com sorteios, pontos, vidas, diário e modo de apresentação.",
+  "scripts": {
+    "dev": "node tools/serve.js",
+    "test": "node --test --test-timeout=15000 tests/*.test.js",
+    "lint": "eslint src tests tools eslint.config.js",
+    "build": "node tools/build.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luanabuscariolo/classroom-quest.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/luanabuscariolo/classroom-quest/issues"
+  },
+  "homepage": "https://github.com/luanabuscariolo/classroom-quest#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "acorn": "^8.18.0",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.9"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  }
+}

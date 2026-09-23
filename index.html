@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      name="description"
+      content="TIC Quest: turmas, pontos, sorteios e diário de aula, com dados guardados neste navegador."
+    />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TIC QUEST · A turma entra em jogo</title>
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+    <link rel="stylesheet" href="./assets/css/feedback.css" />
+    <link rel="stylesheet" href="./assets/css/game.css" />
+    <link rel="stylesheet" href="./assets/css/workspace.css" />
+    <link rel="stylesheet" href="./assets/css/diary.css" />
+  </head>
+  <body>
+    <section id="classHub" class="game" hidden aria-label="As minhas turmas">
+      <header class="hub-header">
+        <div>
+          <div class="eyebrow pixel">
+            <span id="hubTeacherName">Prof. Luana · MASTER</span> · CENTRAL DE
+            MISSÕES
+          </div>
+          <h1 class="pixel">AS MINHAS TURMAS</h1>
+        </div>
+        <span class="hub-emblem">♛</span>
+      </header>
+      <div class="hub-toolbar">
+        <button id="hubDiary" class="button">▤ Diário do professor</button
+        ><button id="hubTeacherSelect" class="button">♛ Professores</button
+        ><button id="createClass" class="button gold">＋ Nova turma</button
+        ><button id="hubBackup" class="button mint">↓ Backup completo</button
+        ><button id="hubImport" class="button">↑ Restaurar / importar</button
+        ><label class="archive-toggle"
+          ><input id="showArchived" type="checkbox" /> Arquivadas</label
+        >
+      </div>
+      <div id="hubBackupStatus" class="backup-status" role="status"></div>
+      <div
+        id="storageWarning"
+        class="storage-warning"
+        role="alert"
+        hidden
+      ></div>
+      <div id="emptyHub" class="empty-hub frame">
+        <span>✦</span>
+        <h2>A próxima missão começa aqui.</h2>
+        <p>Cria uma turma ou importa um backup.</p>
+      </div>
+      <div id="classGrid" class="class-grid"></div>
+      <p class="hub-foot">
+        Os dados no navegador são uma cópia de apoio. Guarda o backup para mudar
+        de computador ou mudar o endereço da aplicação.
+      </p>
+    </section>
+    <section
+      id="setupOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="setupTitle"
+    >
+      <div class="modal wide-modal">
+        <h2 id="setupTitle" class="pixel">＋ PREPARAR TURMA</h2>
+        <form id="setupForm">
+          <label for="setupName">Nome da turma</label
+          ><input
+            id="setupName"
+            class="field"
+            maxlength="50"
+            placeholder="Ex.: 5.º A · 2026/27"
+            required
+          /><label for="setupNames">Alunos · um nome por linha (até 30)</label
+          ><textarea
+            id="setupNames"
+            class="field"
+            rows="10"
+            placeholder="Ana Silva&#10;João Costa&#10;Sofia Santos"
+            required
+          ></textarea>
+          <p id="setupError" role="alert"></p>
+          <div class="actions">
+            <button type="button" class="button" data-close="setupOverlay">
+              Cancelar</button
+            ><button class="button gold" type="submit">
+              Criar e rever avatares →
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+    <section
+      id="activitiesOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="activitiesTitle"
+    >
+      <div class="modal wide-modal">
+        <div class="modal-heading">
+          <h2 id="activitiesTitle" class="pixel">★ ATIVIDADES</h2>
+          <button class="button small" data-close="activitiesOverlay">
+            Fechar
+          </button>
+        </div>
+        <div class="activity-tabs">
+          <button id="activityTab" class="button gold" aria-pressed="true">
+            Atribuir pontos</button
+          ><button id="historyTab" class="button" aria-pressed="false">
+            Histórico
+          </button>
+        </div>
+        <div id="activityEditor">
+          <label for="activityName">Atividade</label
+          ><input
+            id="activityName"
+            class="field"
+            maxlength="100"
+            list="activityPresets"
+            placeholder="Ex.: TPC entregue"
+          /><datalist id="activityPresets"></datalist>
+          <div class="activity-values">
+            <label for="activityPoints"
+              >Pontos por aluno
+              <input
+                id="activityPoints"
+                class="field"
+                type="number"
+                min="1"
+                max="1000"
+                value="1"
+                step="1" /></label
+            ><label
+              ><input id="rememberActivity" type="checkbox" checked /> Guardar
+              atividade frequente</label
+            >
+          </div>
+          <div class="actions">
+            <button id="activityAll" class="button small">✓ Todos</button
+            ><button id="activityNone" class="button small">Limpar</button>
+          </div>
+          <div id="activityStudents" class="activity-students"></div>
+          <p id="activityFeedback" role="status"></p>
+          <button id="applyActivity" class="button gold" disabled>
+            Atribuir pontos
+          </button>
+        </div>
+        <div id="activityHistory" hidden></div>
+      </div>
+    </section>
+    <section
+      id="backupOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="backupTitle"
+    >
+      <div class="modal wide-modal">
+        <h2 id="backupTitle" class="pixel">↓ BACKUP COMPLETO</h2>
+        <p id="backupSummary"></p>
+        <div id="backupDetail" class="backup-status"></div>
+        <p>
+          Guarda o ficheiro .json numa pasta segura. Para atualizar a aplicação,
+          abre o novo HTML e importa esse ficheiro.
+        </p>
+        <div class="actions">
+          <button id="downloadBackup" class="button mint">
+            ↓ Descarregar todas as turmas</button
+          ><button id="backupExit" class="button gold">
+            Guardar backup e sair da turma</button
+          ><button class="button" data-close="backupOverlay">Fechar</button>
+        </div>
+        <div id="backupReceipt" class="backup-receipt" hidden>
+          <p id="backupReceiptText"></p>
+          <button id="confirmBackup" class="button mint">
+            ✓ Confirmei o ficheiro guardado
+          </button>
+        </div>
+        <p id="backupError" role="alert"></p>
+      </div>
+    </section>
+    <main id="gameMain" class="game">
+      <div id="bootWarning" class="boot-warning">
+        <strong>Abre este HTML no Chrome, Edge ou Firefox.</strong>Se esta
+        mensagem continuar visível, este visor não está a executar os controlos.
+        Descarrega o ficheiro e abre-o no navegador.
+      </div>
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <div><h1 class="pixel">TIC QUEST</h1></div>
+        </div>
+        <div class="actions">
+          <label class="class-label pixel" for="className">TURMA</label
+          ><input
+            id="className"
+            class="class-field"
+            maxlength="50"
+            value="6.º A"
+          /><button id="soundToggle" class="button" aria-pressed="true">
+            ♪ Som ligado</button
+          ><label class="volume-control" for="volume"
+            >Volume
+            <input
+              id="volume"
+              type="range"
+              min="0"
+              max="100"
+              value="80"
+            /><output id="volumeValue">80%</output></label
+          ><button id="editNames" class="button">✎ Nomes</button
+          ><button id="gameTeacherSelect" class="button">♛ Professores</button
+          ><button id="classesOpen" class="button">▦ Turmas</button
+          ><button id="gameDiary" class="button">▤ Diário</button
+          ><button id="gameProject" class="button">▣ Apresentar</button
+          ><button id="activitiesOpen" class="button gold">★ Dar pontos</button
+          ><button id="save" class="button mint">↓ Backup</button
+          ><button id="load" class="button">↑ Importar</button>
+        </div>
+      </header>
+      <div class="backup-strip">
+        <div id="gameBackupStatus" class="backup-status" role="status"></div>
+        <button id="quickBackup" class="button mint">
+          Guardar backup / terminar aula
+        </button>
+      </div>
+      <p id="projectStatus" role="status"></p>
+      <section
+        id="healthHud"
+        class="hud frame"
+        aria-label="Vida e pontos da turma"
+      >
+        <div>
+          <div class="hp-head">
+            <strong class="pixel">♥ VIDA DA TURMA</strong
+            ><span id="hpNumber" class="pixel hp-number">5 / 5</span>
+          </div>
+          <div
+            id="hpBlocks"
+            class="hp-blocks"
+            role="progressbar"
+            aria-label="Vida da turma"
+            aria-valuemin="0"
+            aria-valuemax="5"
+            aria-valuenow="5"
+          >
+            <span class="hp-block">♥</span><span class="hp-block">♥</span
+            ><span class="hp-block">♥</span><span class="hp-block">♥</span
+            ><span class="hp-block">♥</span>
+          </div>
+        </div>
+        <div class="hud-controls">
+          <button
+            id="lifeMinus"
+            class="button pink"
+            aria-label="Perder uma vida"
+          >
+            − ♥</button
+          ><button id="lifePlus" class="button" aria-label="Recuperar uma vida">
+            + ♥</button
+          ><button id="newLesson" class="button">Nova aula</button>
+        </div>
+      </section>
+      <div class="layout">
+        <section class="arena frame">
+          <div id="stage" class="stage" aria-label="Cenário do jogo">
+            <div class="stage-hud">
+              <span id="stageName"></span
+              ><span id="stageLevel" class="stage-label">FASE 01</span>
+            </div>
+            <div class="stage-portal" aria-hidden="true"></div>
+            <div id="stageActor" class="stage-actor">
+              <span
+                id="stageSprite"
+                class="stage-sprite"
+                aria-hidden="true"
+              ></span>
+            </div>
+            <div id="stageMessage" class="stage-message" role="status"></div>
+            <div id="stageGameOver" class="stage-gameover" hidden>
+              GAME OVER
+            </div>
+          </div>
+          <div class="arena-top">
+            <h2 class="pixel">JOGADORES</h2>
+            <span id="playerCount" class="pixel">30 JOGADORES</span>
+          </div>
+          <div class="arena-controls">
+            <span id="poolCount" class="select-count">30 no sorteio</span>
+            <div class="row">
+              <button id="selectAll" class="button small">✓ Todos</button
+              ><button id="selectNone" class="button small">
+                Limpar seleção
+              </button>
+            </div>
+          </div>
+          <div class="board-floor">
+            <div class="front pixel">★ CLASSIFICAÇÃO ★</div>
+            <div id="players" class="players" aria-label="Mesas e alunos"></div>
+          </div>
+          <div class="arena-footer">
+            <span>Mais pontos, mais acima. Empates por nome.</span
+            ><span>☑ Marca quem entra no sorteio.</span>
+          </div>
+        </section>
+        <aside class="right">
+          <section class="raffle frame">
+            <button id="draw" class="raffle-button">🎲 SORTEAR</button>
+            <div id="drawOutput" class="raffle-output" role="status"></div>
+          </section>
+          <section class="character frame" id="characterPanel">
+            <div id="masterProfile" hidden>
+              <div id="masterHeading" class="character-head pixel">
+                ♛ PROFESSORA MASTER
+              </div>
+              <button
+                id="masterPortrait"
+                class="master-portrait"
+                aria-label="Professora Luana: assumir o comando"
+              >
+                <span
+                  id="masterAvatar"
+                  class="game-avatar"
+                  data-sheet="teacher"
+                  aria-hidden="true"
+                ></span
+                ><span class="master-crown" aria-hidden="true">♛</span>
+              </button>
+              <h2 id="masterDisplayName" class="selected-name">Prof. Luana</h2>
+              <button id="masterChange" class="button small master-change">
+                Trocar Master
+              </button>
+              <div
+                id="masterCommand"
+                class="master-command pixel"
+                role="status"
+              >
+                NO COMANDO
+              </div>
+              <div class="master-actions">
+                <button id="masterRally" class="button mint">
+                  ⚡ VAMOS LÁ!
+                </button>
+              </div>
+            </div>
+            <div id="studentProfile">
+              <button
+                id="clearStudent"
+                class="clear-student"
+                aria-label="Desselecionar aluno e voltar à professora Master"
+                title="Voltar à Master"
+              >
+                ×
+              </button>
+              <div id="selectedSeat" class="character-head pixel">
+                JOGADOR · MESA 01
+              </div>
+              <div class="character-preview">
+                <span id="selectedAvatar" class="big-avatar" aria-hidden="true"
+                  >🤖</span
+                >
+                <h2 id="selectedName" class="selected-name">Aluno 01</h2>
+                <div id="selectedScore" class="selected-score pixel">★ 0</div>
+              </div>
+              <div class="score-buttons">
+                <button
+                  class="button pink"
+                  id="scoreMinus"
+                  aria-label="Retirar um ponto"
+                >
+                  −1</button
+                ><button
+                  class="button gold"
+                  id="scorePlus"
+                  aria-label="Atribuir um ponto"
+                >
+                  +1</button
+                ><button
+                  class="button gold"
+                  id="scorePlusTwo"
+                  aria-label="Atribuir dois pontos"
+                >
+                  +2
+                </button>
+              </div>
+              <form id="nameForm" class="name-form">
+                <label for="studentName">Nome do jogador</label
+                ><input
+                  id="studentName"
+                  class="field"
+                  maxlength="60"
+                  value="Aluno 01"
+                  autocomplete="off"
+                /><button type="submit" class="button">OK</button>
+              </form>
+              <div class="avatar-controls">
+                <select
+                  id="studentGender"
+                  class="field"
+                  aria-label="Personagem do aluno"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="robot">Robô</option>
+                  <option value="f">Feminino</option>
+                  <option value="m">Masculino</option></select
+                ><button id="nextAvatar" class="button small">
+                  Trocar avatar
+                </button>
+              </div>
+            </div>
+            <button id="masterAttention" class="button gold master-silence">
+              ✋ SILÊNCIO
+            </button>
+          </section>
+          <button hidden id="attention" class="button gold attention-button">
+            ✋ ATENÇÃO / SILÊNCIO <span>10 segundos</span></button
+          ><button id="teamsOpen" class="teams-button button frame">
+            ⚑ EQUIPAS
+          </button>
+        </aside>
+      </div>
+      <p id="status" class="status" role="status"></p>
+      <div id="ready" class="ready">
+        TIC QUEST · Guarda o save no fim da aula.
+      </div>
+    </main>
+    <section
+      id="teachersOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="teachersTitle"
+    >
+      <div class="modal wide-modal">
+        <div class="modal-heading">
+          <h2 id="teachersTitle" class="pixel">♛ PROFESSORES MASTER</h2>
+          <button class="button" data-close="teachersOverlay">Fechar</button>
+        </div>
+        <button id="newTeacher" class="button gold">+ Novo professor</button>
+        <div id="teacherCards" class="teacher-cards"></div>
+        <div id="teacherEditor" hidden>
+          <h3 id="teacherFormTitle" class="pixel">NOVO MASTER</h3>
+          <form id="teacherForm">
+            <div class="teacher-fields">
+              <span id="teacherDraftAvatar" class="teacher-draft-avatar"></span>
+              <div>
+                <label for="teacherName">Nome</label
+                ><input
+                  id="teacherName"
+                  class="field"
+                  maxlength="60"
+                  required
+                  autocomplete="off"
+                /><label for="teacherTitle">Título</label
+                ><select id="teacherTitle" class="field">
+                  <option>Professor</option>
+                  <option>Professora</option>
+                  <option>Master</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-heading">
+              <h3>Escolhe o teu Master</h3>
+              <button
+                type="button"
+                id="randomTeacherAvatar"
+                class="button small"
+              >
+                ↻ Aleatório
+              </button>
+            </div>
+            <div id="teacherAvatars" class="teacher-avatars"></div>
+            <p id="teacherError" role="alert"></p>
+            <div class="actions">
+              <button type="button" id="cancelTeacherEdit" class="button">
+                Cancelar</button
+              ><button type="submit" class="button mint">
+                Guardar e usar perfil
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+    <section
+      id="diaryOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="diaryTitle"
+    >
+      <div class="modal diary-modal">
+        <div class="modal-heading">
+          <div>
+            <div class="eyebrow pixel">ÁREA DO PROFESSOR</div>
+            <h2 id="diaryTitle" class="pixel">DIÁRIO DA TURMA</h2>
+          </div>
+          <button class="button" data-close="diaryOverlay">
+            Voltar ao jogo
+          </button>
+        </div>
+        <div class="diary-toolbar">
+          <label
+            >Turma
+            <select id="diaryClass" class="field"></select></label
+          ><button id="diaryProject" class="button gold">
+            ▣ Apresentar jogo</button
+          ><span id="diarySaved" role="status"></span>
+        </div>
+        <p id="projectHelp" class="diary-hint" hidden>
+          A janela de apresentação mostra apenas o jogo. Move-a para o projetor
+          e mantém este diário no teu ecrã.
+        </p>
+        <div id="diaryEmpty" hidden>Cria uma turma para começar o diário.</div>
+        <div id="dailyNavigation" class="daily-nav">
+          <button id="dailyHome" class="button">Diário</button
+          ><button id="showDailyHistory" class="button">
+            Histórico por dia
+          </button>
+        </div>
+        <section id="diaryStart">
+          <h3>O que queres fazer?</h3>
+          <div class="daily-start">
+            <button id="annotateToday" class="button gold">
+              ✎ Anotar o dia de hoje</button
+            ><button id="startHistory" class="button mint">
+              ▤ Consultar histórico por dia
+            </button>
+          </div>
+          <label for="dailyDate">Outra data</label>
+          <div class="daily-start">
+            <input id="dailyDate" type="date" class="field" /><button
+              id="annotateDate"
+              class="button"
+            >
+              Anotar esta data
+            </button>
+          </div>
+        </section>
+        <section id="dailyHistory" hidden>
+          <h3>Histórico da turma · por dia</h3>
+          <div class="daily-start">
+            <input
+              id="historyDateFilter"
+              type="date"
+              class="field"
+              aria-label="Filtrar histórico por data"
+            /><button id="clearHistoryFilter" class="button small">
+              Todas as datas
+            </button>
+          </div>
+          <div id="dailyHistoryList"></div>
+        </section>
+        <section id="dailyReport" hidden>
+          <h3 id="dailyReportTitle"></h3>
+          <div class="daily-start">
+            <button id="dailyReportBack" class="button">← Histórico</button
+            ><button id="editReportDay" class="button gold">Editar dia</button
+            ><button id="copyWholeDay" class="button">
+              Copiar dia completo</button
+            ><button id="exportWholeDay" class="button mint">
+              ↓ Exportar dia
+            </button>
+          </div>
+          <p class="diary-hint">Vista do professor · inclui notas privadas.</p>
+          <div id="dailyReportText"></div>
+          <div id="dailyPointEvents"></div>
+        </section>
+        <div id="dailyEditBar" class="daily-edit-bar" hidden>
+          <button id="saveDiaryDay" class="button mint" disabled>
+            ✓ Guardar dia</button
+          ><button id="showWholeDay" class="button gold">
+            Ver dia completo
+          </button>
+        </div>
+        <div id="diaryBody" class="diary-layout">
+          <aside class="diary-calendar">
+            <div class="modal-heading">
+              <button
+                id="monthPrev"
+                class="button small"
+                aria-label="Mês anterior"
+              >
+                ‹</button
+              ><strong id="calendarMonth"></strong
+              ><button
+                id="monthNext"
+                class="button small"
+                aria-label="Mês seguinte"
+              >
+                ›
+              </button>
+            </div>
+            <div class="weekdays">
+              <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span
+              ><span>Sex</span><span>Sáb</span><span>Dom</span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+            <label for="lessonDate">Data da aula</label
+            ><input id="lessonDate" class="field" type="date" /><button
+              id="calendarToday"
+              class="button small"
+            >
+              Hoje</button
+            ><label for="lessonSelect">Aulas nesta data</label
+            ><select id="lessonSelect" class="field"></select
+            ><button id="newDiaryLesson" class="button mint">
+              + Iniciar aula
+            </button>
+            <div id="calendarStats" class="diary-hint"></div>
+          </aside>
+          <div class="diary-content">
+            <div class="diary-tabs">
+              <button id="tabLesson" class="button gold" aria-pressed="true">
+                Aula e presenças</button
+              ><button id="tabHomework" class="button" aria-pressed="false">
+                TPC e entregas</button
+              ><button id="tabNotes" class="button" aria-pressed="false">
+                Notas privadas
+              </button>
+            </div>
+            <div id="lessonEmpty" class="empty-lesson">
+              Seleciona uma aula ou clica em “Iniciar aula”.
+            </div>
+            <section id="lessonPane">
+              <div class="diary-two">
+                <label
+                  >N.º da aula
+                  <input
+                    id="lessonNumber"
+                    type="number"
+                    min="1"
+                    max="10000"
+                    class="field" /></label
+                ><label
+                  >Professor
+                  <input id="lessonTeacher" class="field" maxlength="80"
+                /></label>
+              </div>
+              <label for="lessonSummary">Sumário</label
+              ><textarea
+                id="lessonSummary"
+                class="field"
+                rows="3"
+                maxlength="20000"
+              ></textarea
+              ><label for="lessonActivities">Atividades realizadas</label
+              ><textarea
+                id="lessonActivities"
+                class="field"
+                rows="3"
+                maxlength="20000"
+              ></textarea>
+              <div class="modal-heading">
+                <h3>Presenças</h3>
+                <button id="allPresent" class="button small">
+                  Marcar todos presentes
+                </button>
+              </div>
+              <div id="attendanceCount" class="diary-hint"></div>
+              <div id="attendanceList" class="attendance-list"></div>
+              <div class="diary-actions">
+                <button id="copySummary" class="button">Copiar sumário</button
+                ><button id="exportLesson" class="button mint">
+                  ↓ Registo da aula</button
+                ><label
+                  ><input id="exportPrivate" type="checkbox" /> Incluir notas
+                  privadas no ficheiro</label
+                >
+              </div>
+            </section>
+            <section id="homeworkPane" hidden>
+              <label for="lessonHomework">Trabalho de casa</label
+              ><textarea
+                id="lessonHomework"
+                class="field"
+                rows="4"
+                maxlength="20000"
+              ></textarea
+              ><label for="homeworkDue">Prazo de entrega</label
+              ><input id="homeworkDue" type="date" class="field" /><button
+                id="copyHomework"
+                class="button small"
+              >
+                Copiar TPC
+              </button>
+              <h3>Controlo de entrega</h3>
+              <div id="homeworkList" class="attendance-list"></div>
+              <div class="diary-actions">
+                <label
+                  >Pontos
+                  <input
+                    id="homeworkPoints"
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value="1"
+                    class="field" /></label
+                ><button id="rewardHomework" class="button gold">
+                  ★ Premiar entregas
+                </button>
+              </div>
+              <p id="homeworkFeedback" role="status"></p>
+            </section>
+            <section id="notesPane" hidden>
+              <label for="noteTarget">Notas de</label
+              ><select id="noteTarget" class="field"></select>
+              <form id="noteForm">
+                <label for="noteDate">Data</label
+                ><input
+                  id="noteDate"
+                  type="date"
+                  class="field"
+                  required
+                /><label for="noteText">Nova anotação</label
+                ><textarea
+                  id="noteText"
+                  class="field"
+                  rows="3"
+                  maxlength="6000"
+                  required
+                ></textarea
+                ><button type="submit" class="button mint">
+                  + Guardar nota
+                </button>
+              </form>
+              <div id="notesList"></div>
+            </section>
+            <p id="diaryFeedback" role="status"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section
+      id="copyOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="copyTitle"
+    >
+      <div class="modal wide-modal">
+        <h2 id="copyTitle">Texto para copiar</h2>
+        <textarea id="copyText" class="field" rows="10" readonly></textarea>
+        <p>Seleciona o texto e copia com Ctrl+C ou o menu do dispositivo.</p>
+        <button class="button" data-close="copyOverlay">Fechar</button>
+      </div>
+    </section>
+    <section
+      id="importOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="importTitle"
+    >
+      <div class="modal">
+        <h2 id="importTitle" class="pixel">↑ RESTAURAR / IMPORTAR</h2>
+        <label for="loadFile">Backup ou save antigo (.json)</label
+        ><input id="loadFile" class="load-file" type="file" />
+        <p id="importStatus" class="load-status" role="status">
+          Seleciona um ficheiro para verificar os dados.
+        </p>
+        <div id="importPreview" class="import-preview"></div>
+        <div class="import-options">
+          <label
+            ><input type="radio" name="importMode" value="copies" checked />
+            Importar como novas turmas</label
+          ><label
+            ><input type="radio" name="importMode" value="replace" /> Substituir
+            todas as turmas</label
+          ><label id="replaceWarning" hidden
+            ><input id="replaceConfirm" type="checkbox" /> Confirmo a
+            substituição. Será descarregada uma cópia dos dados atuais antes de
+            restaurar.</label
+          >
+        </div>
+        <div class="actions">
+          <button class="button" data-close="importOverlay">Cancelar</button
+          ><button id="applyImport" class="button mint" disabled>
+            Carregar estes dados
+          </button>
+        </div>
+        <details class="import-alternative">
+          <summary>Alternativa: colar o conteúdo do save</summary>
+          <textarea
+            id="importText"
+            class="field"
+            aria-label="Conteúdo do save"
+            spellcheck="false"
+          ></textarea
+          ><button id="readPastedSave" class="button">Verificar texto</button>
+        </details>
+      </div>
+    </section>
+    <section
+      id="attentionOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="attentionTitle"
+    >
+      <div class="modal attention-modal">
+        <h2 id="attentionTitle" class="pixel">✋ ATENÇÃO, TURMA!</h2>
+        <p id="attentionPrompt" hidden>É hora de parar de conversar e ouvir.</p>
+        <div id="attentionNumber" class="attention-number" aria-live="polite">
+          10
+        </div>
+        <div
+          class="attention-progress"
+          role="progressbar"
+          id="attentionProgress"
+          aria-label="Tempo para fazer silêncio"
+          aria-valuemin="0"
+          aria-valuemax="10"
+          aria-valuenow="10"
+        >
+          <div id="attentionFill" class="attention-fill"></div>
+        </div>
+        <div id="attentionDecisions" class="attention-decisions" hidden>
+          <button id="attentionQuiet" class="button mint">✓ Em silêncio</button
+          ><button id="attentionNoisy" class="button pink">−1 ♥</button>
+        </div>
+        <div
+          id="attentionResult"
+          class="attention-result"
+          hidden
+          role="status"
+        ></div>
+        <div class="actions">
+          <button
+            id="attentionCancel"
+            class="button"
+            data-close="attentionOverlay"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </section>
+    <section
+      id="namesOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="namesTitle"
+    >
+      <div class="modal modal-roster">
+        <h2 id="namesTitle" class="pixel">✎ EQUIPA DE JOGADORES</h2>
+        <details class="bulk-names">
+          <summary>Colar uma lista de nomes</summary>
+          <textarea
+            id="namesText"
+            class="field"
+            aria-label="Nomes dos alunos, um por linha"
+            spellcheck="false"
+          ></textarea
+          ><button id="pasteNames" class="button">
+            Aplicar à lista abaixo
+          </button>
+        </details>
+        <div class="roster-header">
+          <span>Avatar</span><span>Nome</span><span>Personagem</span
+          ><span>Trocar</span>
+        </div>
+        <div id="rosterList" class="roster-list"></div>
+        <div class="actions">
+          <button class="button" data-close="namesOverlay">Cancelar</button
+          ><button id="applyNames" class="button mint">
+            Guardar nomes e avatares
+          </button>
+        </div>
+      </div>
+    </section>
+    <section
+      id="teamsOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="teamsTitle"
+    >
+      <div class="modal">
+        <h2 id="teamsTitle" class="pixel">⚑ EQUIPAS EM JOGO</h2>
+        <div class="row">
+          <label for="teamCount">Equipas</label
+          ><select id="teamCount" class="field">
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option></select
+          ><button id="makeTeams" class="button mint">Sortear equipas</button>
+        </div>
+        <div id="teamList" class="teams-list"></div>
+        <div class="actions">
+          <button class="button" data-close="teamsOverlay">
+            Voltar ao jogo
+          </button>
+        </div>
+      </div>
+    </section>
+    <section
+      id="drawOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drawLabel"
+    >
+      <div class="draw-modal">
+        <p id="drawLabel" class="draw-label pixel">✦ SORTEIO EM CURSO ✦</p>
+        <div class="wheel-wrap">
+          <span
+            id="wheelPointer"
+            class="wheel-pointer"
+            aria-hidden="true"
+          ></span
+          ><canvas
+            id="nameWheel"
+            width="900"
+            height="900"
+            role="img"
+            aria-label="Roleta dos alunos selecionados"
+          ></canvas
+          ><span class="wheel-center" aria-hidden="true">TIC</span>
+        </div>
+        <div id="drawName" class="draw-name"></div>
+        <div id="drawSeat" class="draw-seat pixel"></div>
+        <div
+          id="drawProgress"
+          class="suspense-track"
+          role="progressbar"
+          aria-label="Progresso do sorteio"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="drawProgressFill" class="suspense-fill"></div>
+        </div>
+        <p id="drawNote" class="draw-note">Quem será o próximo?</p>
+        <button id="cancelDraw" class="button">Cancelar sorteio</button>
+      </div>
+    </section>
+    <div id="lifeToast" class="life-toast" hidden role="status">
+      <span id="lifeToastIcon" class="toast-icon" aria-hidden="true">♥</span
+      ><span id="lifeToastText" class="toast-text"></span>
+    </div>
+    <section
+      id="winnerOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="winnerName"
+    >
+      <div class="modal winner-modal">
+        <div class="winner-kicker pixel">★ É A TUA VEZ! ★</div>
+        <span id="winnerAvatar" class="big-avatar" aria-hidden="true"></span>
+        <h2 id="winnerName" class="pixel"></h2>
+        <p id="winnerSeat"></p>
+        <div class="actions">
+          <button id="winnerPoint" class="button gold">★ Dar +1 ponto</button
+          ><button class="button" data-close="winnerOverlay">Continuar</button>
+        </div>
+      </div>
+    </section>
+    <div id="confetti" class="confetti" aria-hidden="true"></div>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

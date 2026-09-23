@@ -1,0 +1,12 @@
+node_modules/
+coverage/
+playwright-report/
+test-results/
+.DS_Store
+Thumbs.db
+*.log
+# Backups contain personal data. Never publish them with the site.
+TIC_*.json
+TIC_*.txt
+backups/
+dist/
