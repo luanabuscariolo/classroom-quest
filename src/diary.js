@@ -239,7 +239,6 @@ export function createDiary(app) {
     ["lessonSummary", "summary"],
     ["lessonActivities", "activities"],
     ["lessonHomework", "homework"],
-    ["lessonTeacher", "teacher"],
   ].forEach(function (pair) {
     $(pair[0]).oninput = function () {
       var l = lesson();
@@ -730,6 +729,7 @@ export function createDiary(app) {
   }
 
   function openDiary() {
+    if (!app.requireTeacher()) return;
     var options = $("diaryClass");
     options.textContent = "";
     app.workspace.classes.forEach(function (c) {

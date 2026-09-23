@@ -17,12 +17,7 @@ import {
   masterSprite,
 } from "./avatars.js";
 import { packageBackup } from "./backup.js";
-import {
-  emptyWorkspace,
-  validateWorkspace,
-  defaultTeachers,
-  emptyDiary,
-} from "./model.js";
+import { emptyWorkspace, validateWorkspace, emptyDiary } from "./model.js";
 import { pad, uid, copy, integer } from "./utils.js";
 var $ = function (id) {
   return document.getElementById(id);
@@ -1054,7 +1049,7 @@ document.addEventListener(
     if (
       selected < 0 ||
       e.target.closest(
-        ".player, .character, .overlay, #gameTeacherSelect, #gameDiary, #gameProject",
+        ".player, .character, .overlay, #gameDiary, #gameProject",
       )
     )
       return;
@@ -1174,9 +1169,10 @@ function showHub() {
   $("gameMain").hidden = true;
   $("classHub").hidden = false;
   renderHub();
-  $("createClass").focus();
+  $(currentTeacher() ? "createClass" : "teacherName").focus();
 }
 function enterClass(id) {
+  if (!requireTeacher()) return;
   var c = workspace.classes.find(function (c) {
     return c.id === id;
   });
@@ -1290,8 +1286,8 @@ function renderHub() {
           w.classes = [copy(c)];
           w.activeClassId = c.id;
           w.presets = copy(workspace.presets);
-          w.teachers = [copy(currentTeacher())];
-          w.activeTeacherId = currentTeacher().id;
+          w.teachers = currentTeacher() ? [copy(currentTeacher())] : [];
+          w.activeTeacherId = currentTeacher()?.id ?? null;
           downloadJSON(
             packageBackup(w, "class"),
             "TIC_turma_" +
@@ -1310,6 +1306,7 @@ function renderHub() {
   updateBackupStatus();
 }
 $("createClass").onclick = function () {
+  if (!requireTeacher()) return;
   if (workspace.classes.length >= 200) {
     alert("Limite de 200 turmas.");
     return;
@@ -1320,6 +1317,7 @@ $("createClass").onclick = function () {
 };
 $("setupForm").onsubmit = function (e) {
   e.preventDefault();
+  if (!requireTeacher()) return;
   var name = $("setupName").value.trim(),
     names = $("setupNames")
       .value.split(/\r?\n/)
@@ -1913,177 +1911,91 @@ function initWorkspace() {
   }
   updateBackupStatus();
 }
-var teacherDraft = null;
-var masterLabels = [
-  "Luana",
-  "Reinaldo",
-  "Emília",
-  "Lucila",
-  "Ruivo curto",
-  "Careca e barba",
-  "Tranças longas",
-  "Curto prateado",
-  "Castanho ondulado",
-  "Rabo de cavalo",
-];
-
+// Historical profiles remain in backups; only the active, user-named profile is used.
 function currentTeacher() {
-  return workspace && workspace.teachers
-    ? workspace.teachers.find(function (t) {
-        return t.id === workspace.activeTeacherId;
-      }) || workspace.teachers[0]
-    : defaultTeachers()[0];
+  const teacher = workspace?.teachers.find(
+    (t) => t.id === workspace.activeTeacherId,
+  );
+  // IDs with this prefix belong to the old bundled demo profiles.
+  return teacher && !teacher.id.startsWith("master-") ? teacher : null;
 }
 function masterName() {
-  var t = currentTeacher();
-  return (t.title === "Master" ? "Master " : "Prof. ") + t.name;
+  const t = currentTeacher();
+  return t
+    ? (t.title === "Master" ? "Master " : "Prof. ") + t.name
+    : "Professor";
 }
-
 function teacherSprite(node) {
-  masterSprite(node, currentTeacher().avatar);
+  masterSprite(node, currentTeacher()?.avatar ?? 0);
+}
+function requireTeacher() {
+  if (currentTeacher()) return true;
+  $("teacherError").textContent =
+    "Indica e guarda o teu nome antes de continuar.";
+  $("teacherName").focus();
+  return false;
 }
 function refreshTeacher() {
-  var t = currentTeacher();
+  const t = currentTeacher();
   $("masterHeading").textContent =
     "♛ " +
-    (t.title === "Master" ? "MASTER" : t.title.toUpperCase() + " MASTER");
+    (t?.title === "Master"
+      ? "MASTER"
+      : (t?.title || "Professor").toUpperCase() + " MASTER");
   $("masterDisplayName").textContent = masterName();
   $("masterPortrait").setAttribute(
     "aria-label",
     masterName() + ": assumir o comando",
   );
-  $("hubTeacherName").textContent = masterName() + " · MASTER";
-  $("hubTeacherSelect").textContent = "♛ " + masterName();
-  $("gameTeacherSelect").textContent = "♛ " + masterName();
-  masterSprite($("masterAvatar"), t.avatar);
+  $("hubTeacherName").textContent = t
+    ? masterName() + " · MASTER"
+    : "O teu nome · MASTER";
+  $("gameTeacherName").textContent = "♛ " + masterName();
+  $("hubTeacherStatus").textContent = t
+    ? "Nome guardado neste navegador"
+    : "Começa por indicar o teu nome";
+  $("teacherName").value = t?.name || "";
+  $("teacherTitle").value = t?.title || "Professor";
+  $("teacherAvatar").value = t?.avatar ?? 0;
+  masterSprite($("teacherPreview"), t?.avatar ?? 0);
+  masterSprite($("masterAvatar"), t?.avatar ?? 0);
   if (selected < 0) renderScene();
 }
-function renderTeacherCards() {
-  var root = $("teacherCards");
-  root.textContent = "";
-  workspace.teachers.forEach(function (t) {
-    var box = element(
-        "article",
-        "teacher-card" + (t.id === workspace.activeTeacherId ? " active" : ""),
-      ),
-      portrait = element("span", "teacher-thumb");
-    masterSprite(portrait, t.avatar);
-    box.append(
-      portrait,
-      element("strong", "", t.name),
-      element("small", "", t.title + " · MASTER"),
-    );
-    box.appendChild(
-      button(
-        t.id === workspace.activeTeacherId ? "✓ Em comando" : "Usar perfil",
-        function () {
-          workspace.activeTeacherId = t.id;
-          dirty();
-          refreshTeacher();
-          renderTeacherCards();
-          playSound("select");
-        },
-        "small gold",
-      ),
-    );
-    box.appendChild(
-      button(
-        "Editar",
-        function () {
-          editTeacher(t);
-        },
-        "small",
-      ),
-    );
-    root.appendChild(box);
-  });
-}
-function renderAvatarChoices() {
-  var root = $("teacherAvatars");
-  root.textContent = "";
-  masterLabels.forEach(function (label, i) {
-    var b = button(
-      "",
-      function () {
-        teacherDraft.avatar = i;
-        renderAvatarChoices();
-      },
-      "avatar-choice",
-    );
-    b.dataset.masterChoice = i;
-    b.setAttribute("aria-label", label);
-    b.setAttribute("aria-pressed", String(teacherDraft.avatar === i));
-    var pic = element("span", "teacher-choice-sprite");
-    masterSprite(pic, i);
-    b.append(pic, element("span", "", label));
-    root.appendChild(b);
-  });
-  masterSprite($("teacherDraftAvatar"), teacherDraft.avatar);
-}
-function editTeacher(t) {
-  teacherDraft = t
-    ? copy(t)
-    : {
-        id: null,
-        name: "",
-        title: "Professor",
-        avatar: Math.floor(Math.random() * 10),
-      };
-  $("teacherName").value = teacherDraft.name;
-  $("teacherTitle").value = teacherDraft.title;
-  $("teacherFormTitle").textContent = t ? "EDITAR MASTER" : "NOVO MASTER";
-  $("teacherError").textContent = "";
-  $("teacherEditor").hidden = false;
-  renderAvatarChoices();
-  $("teacherName").focus();
-}
-function openTeachers() {
-  renderTeacherCards();
-  $("teacherEditor").hidden = true;
-  openOverlay("teachersOverlay", "newTeacher");
-}
-$("hubTeacherSelect").onclick = openTeachers;
-$("gameTeacherSelect").onclick = openTeachers;
-$("masterChange").onclick = openTeachers;
-$("newTeacher").onclick = function () {
-  if (workspace.teachers.length >= 100) {
-    alert("Limite de 100 professores.");
-    return;
-  }
-  editTeacher(null);
-};
-$("cancelTeacherEdit").onclick = function () {
-  $("teacherEditor").hidden = true;
-};
-$("randomTeacherAvatar").onclick = function () {
-  var old = teacherDraft.avatar;
-  teacherDraft.avatar = (old + 1 + Math.floor(Math.random() * 9)) % 10;
-  renderAvatarChoices();
+$("teacherAvatar").onchange = function () {
+  masterSprite($("teacherPreview"), Number(this.value));
 };
 $("teacherForm").onsubmit = function (e) {
   e.preventDefault();
-  if (!teacherDraft) return;
-  var name = $("teacherName").value.trim();
-  if (!name) {
-    $("teacherError").textContent = "Indica o nome do professor.";
+  if ($("classHub").hidden) return;
+  const name = $("teacherName").value.trim();
+  if (!name || name.length > 60) {
+    $("teacherError").textContent = "Indica um nome com até 60 caracteres.";
     return;
   }
-  teacherDraft.name = name.slice(0, 60);
-  teacherDraft.title = $("teacherTitle").value;
-  var item = workspace.teachers.find(function (t) {
-    return t.id === teacherDraft.id;
-  });
-  if (item) Object.assign(item, teacherDraft);
-  else {
-    teacherDraft.id = uid();
-    workspace.teachers.push(copy(teacherDraft));
+  const title = $("teacherTitle").value,
+    avatar = Number($("teacherAvatar").value);
+  if (
+    !["Professor", "Professora", "Master"].includes(title) ||
+    !integer(avatar, 0, 9)
+  )
+    return;
+  let teacher = currentTeacher();
+  if (!teacher) {
+    if (workspace.teachers.length >= 100) {
+      $("teacherError").textContent =
+        "O backup atingiu o limite de perfis de professor.";
+      return;
+    }
+    teacher = { id: uid() };
+    workspace.teachers.push(teacher);
   }
-  workspace.activeTeacherId = teacherDraft.id;
+  Object.assign(teacher, { name, title, avatar });
+  workspace.activeTeacherId = teacher.id;
   dirty();
   refreshTeacher();
-  renderTeacherCards();
-  $("teacherEditor").hidden = true;
-  playSound("win");
+  $("teacherError").textContent = storageOK
+    ? ""
+    : "O nome está nesta sessão, mas não foi possível guardá-lo no navegador. Exporta um backup.";
 };
 function mergeTeachers(imported) {
   imported.teachers.forEach(function (t) {
@@ -2179,6 +2091,7 @@ const diary = createDiary({
   openOverlay,
   closeOverlay,
   masterName,
+  requireTeacher,
   get workspace() {
     return workspace;
   },

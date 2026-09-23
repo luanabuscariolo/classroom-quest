@@ -354,3 +354,22 @@
     height: 120px;
   }
 }
+.teacher-onboarding {
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.teacher-onboarding h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: var(--gold);
+}
+.teacher-onboarding p {
+  line-height: 1.5;
+}
+.teacher-onboarding .teacher-thumb {
+  flex-shrink: 0;
+}
+.teacher-onboarding #teacherName {
+  flex: 1;
+  min-width: 150px;
+}

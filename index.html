@@ -24,16 +24,61 @@
       <header class="hub-header">
         <div>
           <div class="eyebrow pixel">
-            <span id="hubTeacherName">Prof. Luana · MASTER</span> · CENTRAL DE
+            <span id="hubTeacherName">O teu nome · MASTER</span> · CENTRAL DE
             MISSÕES
           </div>
           <h1 class="pixel">AS MINHAS TURMAS</h1>
         </div>
         <span class="hub-emblem">♛</span>
       </header>
+      <form id="teacherForm" class="teacher-onboarding frame">
+        <h2 class="pixel">Quem vai orientar a turma?</h2>
+        <p>
+          Indica o teu nome antes de entrar. Fica guardado neste navegador e
+          acompanha-te durante o jogo.
+        </p>
+        <div class="row">
+          <label for="teacherName">O teu nome</label>
+          <input
+            id="teacherName"
+            class="field"
+            maxlength="60"
+            required
+            autocomplete="name"
+          />
+          <label for="teacherTitle">Título</label>
+          <select id="teacherTitle" class="field">
+            <option>Professor</option>
+            <option>Professora</option>
+            <option>Master</option>
+          </select>
+          <label for="teacherAvatar">Personagem</label>
+          <select id="teacherAvatar" class="field">
+            <option value="0">Avatar 1</option>
+            <option value="1">Avatar 2</option>
+            <option value="2">Avatar 3</option>
+            <option value="3">Avatar 4</option>
+            <option value="4">Avatar 5</option>
+            <option value="5">Avatar 6</option>
+            <option value="6">Avatar 7</option>
+            <option value="7">Avatar 8</option>
+            <option value="8">Avatar 9</option>
+            <option value="9">Avatar 10</option>
+          </select>
+          <span
+            id="teacherPreview"
+            class="teacher-thumb"
+            aria-hidden="true"
+          ></span>
+          <button class="button mint" type="submit">
+            Guardar nome e personagem
+          </button>
+        </div>
+        <p id="teacherError" role="alert"></p>
+      </form>
       <div class="hub-toolbar">
         <button id="hubDiary" class="button">▤ Diário do professor</button
-        ><button id="hubTeacherSelect" class="button">♛ Professores</button
+        ><span id="hubTeacherStatus" role="status"></span
         ><button id="createClass" class="button gold">＋ Nova turma</button
         ><button id="hubBackup" class="button mint">↓ Backup completo</button
         ><button id="hubImport" class="button">↑ Restaurar / importar</button
@@ -218,7 +263,7 @@
               value="80"
             /><output id="volumeValue">80%</output></label
           ><button id="editNames" class="button">✎ Nomes</button
-          ><button id="gameTeacherSelect" class="button">♛ Professores</button
+          ><span id="gameTeacherName" class="pixel"></span
           ><button id="classesOpen" class="button">▦ Turmas</button
           ><button id="gameDiary" class="button">▤ Diário</button
           ><button id="gameProject" class="button">▣ Apresentar</button
@@ -325,7 +370,7 @@
               <button
                 id="masterPortrait"
                 class="master-portrait"
-                aria-label="Professora Luana: assumir o comando"
+                aria-label="Professor: assumir o comando"
               >
                 <span
                   id="masterAvatar"
@@ -335,10 +380,7 @@
                 ></span
                 ><span class="master-crown" aria-hidden="true">♛</span>
               </button>
-              <h2 id="masterDisplayName" class="selected-name">Prof. Luana</h2>
-              <button id="masterChange" class="button small master-change">
-                Trocar Master
-              </button>
+              <h2 id="masterDisplayName" class="selected-name">Professor</h2>
               <div
                 id="masterCommand"
                 class="master-command pixel"
@@ -433,65 +475,6 @@
         TIC QUEST · Guarda o save no fim da aula.
       </div>
     </main>
-    <section
-      id="teachersOverlay"
-      class="overlay"
-      hidden
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="teachersTitle"
-    >
-      <div class="modal wide-modal">
-        <div class="modal-heading">
-          <h2 id="teachersTitle" class="pixel">♛ PROFESSORES MASTER</h2>
-          <button class="button" data-close="teachersOverlay">Fechar</button>
-        </div>
-        <button id="newTeacher" class="button gold">+ Novo professor</button>
-        <div id="teacherCards" class="teacher-cards"></div>
-        <div id="teacherEditor" hidden>
-          <h3 id="teacherFormTitle" class="pixel">NOVO MASTER</h3>
-          <form id="teacherForm">
-            <div class="teacher-fields">
-              <span id="teacherDraftAvatar" class="teacher-draft-avatar"></span>
-              <div>
-                <label for="teacherName">Nome</label
-                ><input
-                  id="teacherName"
-                  class="field"
-                  maxlength="60"
-                  required
-                  autocomplete="off"
-                /><label for="teacherTitle">Título</label
-                ><select id="teacherTitle" class="field">
-                  <option>Professor</option>
-                  <option>Professora</option>
-                  <option>Master</option>
-                </select>
-              </div>
-            </div>
-            <div class="modal-heading">
-              <h3>Escolhe o teu Master</h3>
-              <button
-                type="button"
-                id="randomTeacherAvatar"
-                class="button small"
-              >
-                ↻ Aleatório
-              </button>
-            </div>
-            <div id="teacherAvatars" class="teacher-avatars"></div>
-            <p id="teacherError" role="alert"></p>
-            <div class="actions">
-              <button type="button" id="cancelTeacherEdit" class="button">
-                Cancelar</button
-              ><button type="submit" class="button mint">
-                Guardar e usar perfil
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
     <section
       id="diaryOverlay"
       class="overlay"
@@ -645,7 +628,11 @@
                     class="field" /></label
                 ><label
                   >Professor
-                  <input id="lessonTeacher" class="field" maxlength="80"
+                  <input
+                    id="lessonTeacher"
+                    class="field"
+                    maxlength="80"
+                    readonly
                 /></label>
               </div>
               <label for="lessonSummary">Sumário</label

@@ -58,6 +58,15 @@ test("classroom, points, diary drafts, import and presentation work together", a
     await import("../src/app.js");
     assert.equal($("bootWarning").hidden, true);
     assert.equal($("classHub").hidden, false);
+    assert.equal($("teacherName").value, "");
+    click("createClass");
+    assert.equal($("setupOverlay").hidden, true);
+    input("teacherName", "  Alex Teste  ");
+    $("teacherForm").dispatchEvent(
+      new w.Event("submit", { bubbles: true, cancelable: true }),
+    );
+    assert.equal(stored().teachers.length, 1);
+    assert.equal(stored().teachers[0].name, "Alex Teste");
     click("createClass");
     input("setupName", "Turma teste");
     input("setupNames", "Ana\nBruno\nCarla");
@@ -67,6 +76,15 @@ test("classroom, points, diary drafts, import and presentation work together", a
     click("applyNames");
     assert.equal($("gameMain").hidden, false);
     assert.equal(stored().classes.length, 1);
+    assert.equal($("masterDisplayName").textContent, "Prof. Alex Teste");
+    assert.equal($("gameTeacherName").textContent, "♛ Prof. Alex Teste");
+    assert.equal($("masterChange"), null);
+    assert.equal($("gameTeacherSelect"), null);
+    input("teacherName", "Nome indevido");
+    $("teacherForm").dispatchEvent(
+      new w.Event("submit", { bubbles: true, cancelable: true }),
+    );
+    assert.equal(stored().teachers[0].name, "Alex Teste");
     w.document.querySelector('[data-seat="0"]').click();
     click("scorePlus");
     assert.equal(stored().classes[0].students[0].points, 1);
@@ -79,6 +97,8 @@ test("classroom, points, diary drafts, import and presentation work together", a
     w.document.querySelector('[data-close="teamsOverlay"]').click();
     click("gameDiary");
     click("annotateToday");
+    assert.equal($("lessonTeacher").value, "Prof. Alex Teste");
+    assert.equal($("lessonTeacher").readOnly, true);
     input("lessonSummary", "Resumo privado");
     assert.equal(stored().classes[0].diary.lessons.length, 0);
     click("saveDiaryDay");

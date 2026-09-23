@@ -15,7 +15,7 @@ npm run dev
 
 Abrir <http://127.0.0.1:4173/classroom-quest/>. O prefixo simula um site de projeto no GitHub Pages. O servidor escuta apenas no computador local e serve apenas os ficheiros da aplicação. A variável de ambiente `PORT` permite alterar a porta.
 
-Use HTTP local, não um duplo clique em `index.html`: módulos ES precisam de um servidor. `tic-quest.html` é um redirecionamento de compatibilidade para a nova entrada.
+Use HTTP local, não um duplo clique em `index.html`: módulos ES precisam de um servidor. A entrada da aplicação é `index.html`.
 
 ## Organização
 
@@ -60,6 +60,10 @@ A publicação é manual: o workflow de verificação não publica. Os caminhos 
 Referência: [configurar a publicação no GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
 ## Dados e migração
+
+Na tela inicial, indique e guarde o seu nome e personagem antes de entrar numa turma. Essa identificação fica guardada no navegador e aparece no jogo, apresentação e novas aulas do diário. Para a alterar, volte à tela inicial; o jogo não tem troca de professor. Os registos de aulas anteriores mantêm o nome registado na altura.
+
+Os antigos perfis de demonstração deixam de preencher automaticamente o nome. Perfis importados e registos existentes são preservados nos backups.
 
 Antes de mudar do HTML antigo para localhost ou GitHub Pages, exporte um **backup completo** na aplicação antiga e importe-o no novo endereço. O armazenamento pertence à origem e ao perfil do navegador; os dados não acompanham automaticamente a mudança de endereço ou computador.
 

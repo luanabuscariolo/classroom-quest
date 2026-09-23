@@ -91,7 +91,7 @@ export function emptyWorkspace() {
     version: 10,
     revision: 0,
     teachers: defaultTeachers(),
-    activeTeacherId: "master-luana",
+    activeTeacherId: null,
     activeClassId: null,
     classes: [],
     presets: defaultPresets(),
@@ -227,25 +227,16 @@ export function validateWorkspace(raw) {
 }
 
 export function defaultTeachers() {
-  return [
-    { id: "master-luana", name: "Luana", title: "Professora", avatar: 0 },
-    { id: "master-reinaldo", name: "Reinaldo", title: "Professor", avatar: 1 },
-    { id: "master-emilia", name: "Emília", title: "Professora", avatar: 2 },
-    { id: "master-lucila", name: "Lucila", title: "Professora", avatar: 3 },
-  ];
+  return [];
 }
 
 export function validateTeachers(raw, w) {
   if (raw.version === 8) {
     w.teachers = defaultTeachers();
-    w.activeTeacherId = w.teachers[0].id;
+    w.activeTeacherId = null;
     return;
   }
-  if (
-    !Array.isArray(raw.teachers) ||
-    !raw.teachers.length ||
-    raw.teachers.length > 100
-  )
+  if (!Array.isArray(raw.teachers) || raw.teachers.length > 100)
     throw Error("Perfis de professores inválidos.");
   var ids = new Set();
   w.teachers = raw.teachers.map(function (t) {
@@ -265,6 +256,10 @@ export function validateTeachers(raw, w) {
     ids.add(t.id);
     return { id: t.id, name: t.name.trim(), title: t.title, avatar: t.avatar };
   });
+  if (!w.teachers.length && raw.activeTeacherId === null) {
+    w.activeTeacherId = null;
+    return;
+  }
   if (!ids.has(raw.activeTeacherId)) throw Error("Professor ativo inválido.");
   w.activeTeacherId = raw.activeTeacherId;
 }
