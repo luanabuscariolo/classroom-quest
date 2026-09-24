@@ -5,6 +5,8 @@ export function createPresentation(app) {
   let presentationWindow = null,
     presentationTimer = null,
     projectionSignature = "";
+  // Buttons outside this list are removed from the copy. "Nova aula" stays out:
+  // its confirmation dialog opens in the main window, not on the projector.
   const projectionAllowed = [
     "draw",
     "cancelDraw",
@@ -16,7 +18,6 @@ export function createPresentation(app) {
     "attentionCancel",
     "lifeMinus",
     "lifePlus",
-    "newLesson",
     "scoreMinus",
     "scorePlus",
     "scorePlusTwo",

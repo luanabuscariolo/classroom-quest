@@ -126,6 +126,7 @@ test("classroom, points, diary drafts, import and presentation work together", a
     );
     assert.equal(popup.document.querySelector("#diaryOverlay"), null);
     assert.equal(popup.document.querySelector("input"), null);
+    assert.equal(popup.document.getElementById("newLesson"), null);
     popup.document.getElementById("lifeMinus").click();
     assert.equal(stored().classes[0].lives, 3);
     w.document.querySelector('[data-close="diaryOverlay"]').click();
