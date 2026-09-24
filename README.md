@@ -106,4 +106,4 @@ A publicação é manual; os pushes e pull requests apenas executam as verifica�
 - **Proibido:** vender, cobrar acesso, oferecer como serviço pago ou incorporar em produtos ou serviços comerciais, incluindo versões modificadas.
 - As cópias devem manter a autoria e a licença; modificações distribuídas devem incluir o código-fonte nas mesmas condições.
 
-Dependências e materiais de terceiros mantêm as suas licenças. A origem e a licença das imagens ainda devem ser confirmadas antes de uma distribuição pública. Versões anteriormente distribuídas sob MIT mantêm essa licença. Recomenda-se revisão jurídica antes de usar este texto como proteção comercial.
+Dependências e materiais de terceiros mantêm as suas licenças. A origem e a licença das imagens ainda devem ser confirmadas antes de uma distribuição pública. Versões anteriormente distribuídas sob MIT mantêm essa licença.
