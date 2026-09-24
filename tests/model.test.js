@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import {
   emptyWorkspace,
   validate,
+  validClass,
   validateWorkspace,
   validateDiary,
+  VERSION,
 } from "../src/model.js";
 import {
   packageBackup,
@@ -16,19 +18,14 @@ import { validDay } from "../src/utils.js";
 import { canUndo } from "../src/points.js";
 
 export function classroom() {
-  return {
-    ...validate({
-      version: 6,
-      className: "Teste",
-      lives: 5,
-      students: [{ name: "Ana", points: 2 }],
-      groups: [],
-    }),
+  return validClass({
+    version: 6,
+    className: "Teste",
+    lives: 5,
+    students: [{ name: "Ana", points: 2 }],
+    groups: [],
     id: "class-1",
-    archived: false,
-    history: [],
-    diary: { lessons: [], notes: [] },
-  };
+  });
 }
 test("backup round trip preserves data and rejects changed payload", () => {
   const w = emptyWorkspace();
@@ -60,10 +57,10 @@ test("old class formats and workspace versions remain readable", () => {
     assert.equal(result.students.length, 30);
     assert.deepEqual(result.groups[0].members, [0]);
   }
-  for (const version of [8, 9, 10])
+  for (const version of [8, 9, 10, 11])
     assert.equal(
       validateWorkspace({ ...emptyWorkspace(), version }).version,
-      10,
+      VERSION,
     );
 });
 test("reject invalid student, repeated group members, duplicate classes and diary dates", () => {
@@ -90,11 +87,11 @@ test("same size limit applies to pasted backups before parsing", () => {
     /20 MB/,
   );
 });
-test("undo cannot affect a replacement student or overflow a score", () => {
+test("undo without a student id (before version 11) compares the name", () => {
   const c = classroom(),
     event = {
       points: 2,
-      recipients: [{ slot: 0, name: "Ana" }],
+      recipients: [{ slot: 0, studentId: null, name: "Ana" }],
       undoneAt: null,
     };
   assert.equal(canUndo(c, event), true);

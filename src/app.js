@@ -25,6 +25,7 @@ import { createRaffle } from "./raffle.js";
 import { createRoster } from "./roster.js";
 import { createTeacher } from "./teacher.js";
 import { createTeams } from "./teams.js";
+import { removeStudent, setStudentName } from "./students.js";
 import { pad } from "./utils.js";
 
 const { playSound } = createAudio(document, window);
@@ -209,7 +210,7 @@ function updateEditor() {
   $("masterProfile").hidden = !!s;
   $("studentProfile").hidden = !s;
   $("characterPanel").classList.toggle("master-mode", !s);
-  ["scoreMinus", "scorePlus", "scorePlusTwo"].forEach((id) => {
+  ["scoreMinus", "scorePlus", "scorePlusTwo", "removeStudent"].forEach((id) => {
     $(id).disabled = !s || !s.name;
   });
   if (!s) {
@@ -274,26 +275,59 @@ $("className").addEventListener("input", function () {
   state.className = this.value.slice(0, 50);
   dirty();
 });
+/** Remove the students in these slots (after confirmation) and free the slots. */
+function confirmRemoval(slots) {
+  const names = slots.map((i) => state.students[i].name);
+  if (
+    !names.length ||
+    !confirm(
+      "Remover da turma: " +
+        names.join(", ") +
+        "?\nA pontuação atual é apagada. O histórico e o diário mantêm os registos antigos.",
+    )
+  )
+    return false;
+  slots.forEach((i) => {
+    removeStudent(state.students[i]);
+    state.groups.forEach((g) => {
+      g.members = g.members.filter((m) => m !== i);
+    });
+  });
+  return true;
+}
+function afterStudentChange(message) {
+  dirty();
+  syncAll();
+  status(message);
+}
 $("nameForm").addEventListener("submit", (e) => {
   e.preventDefault();
   if (selected < 0) return;
   const s = state.students[selected],
-    name = $("studentName").value.trim().slice(0, 60),
-    wasEmpty = !s.name;
-  if (s.name !== name) {
-    s.name = name;
-    autoAvatar(s, selected);
+    name = $("studentName").value.trim().slice(0, 60);
+  if (!name) {
+    // Clearing the name means removing the student.
+    if (s.name && confirmRemoval([selected])) {
+      clearSelection();
+      afterStudentChange("Aluno removido da turma.");
+    } else $("studentName").value = s.name;
+    return;
   }
-  // A slot that gets its first name joins the raffle.
-  if (!name) s.inPool = false;
-  else if (wasEmpty) s.inPool = true;
-  dirty();
-  updateCard(selected);
-  updateEditor();
-  updateCounts();
-  teams.render();
-  status("Nome guardado. Classificação atualizada.");
+  const change = setStudentName(s, name);
+  if (change === "same") return;
+  autoAvatar(s, selected);
+  afterStudentChange(
+    change === "new"
+      ? "Aluno adicionado."
+      : "Nome corrigido. O histórico do aluno mantém-se.",
+  );
 });
+$("removeStudent").onclick = function () {
+  if (selected < 0 || !state.students[selected].name) return;
+  if (!confirmRemoval([selected])) return;
+  clearSelection();
+  afterStudentChange("Aluno removido da turma.");
+};
 $("studentGender").onchange = function () {
   if (selected < 0) return;
   setCharacter(state.students[selected], selected, this.value);
@@ -669,7 +703,16 @@ const activities = createActivities(
   }),
 );
 createRoster(
-  withLive({ $, openOverlay, closeOverlay, dirty, syncAll, status, rankedIds }),
+  withLive({
+    $,
+    openOverlay,
+    closeOverlay,
+    dirty,
+    syncAll,
+    status,
+    rankedIds,
+    confirmRemoval,
+  }),
 );
 const hub = createHub(
   withLive({

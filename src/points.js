@@ -1,14 +1,13 @@
-/** Historical slots must still belong to the recorded student before undo. */
+import { sameStudent } from "./students.js";
+
+/** Undo only while every slot still holds the recorded student. */
 export function canUndo(classroom, event) {
   return (
     !event.undoneAt &&
-    event.recipients.every(({ slot, name }) => {
-      const student = classroom.students[slot];
-      return (
-        student &&
-        student.name === name &&
-        Number.isSafeInteger(student.points - event.points)
-      );
-    })
+    event.recipients.every(
+      (r) =>
+        sameStudent(classroom, r) &&
+        Number.isSafeInteger(classroom.students[r.slot].points - event.points),
+    )
   );
 }

@@ -8,7 +8,7 @@ Funciona inteiramente no navegador: não há contas, servidor de dados nem servi
 
 ## Funcionalidades
 
-- **Turmas:** até 30 alunos por turma, com avatar em pixel art; turmas podem ser arquivadas.
+- **Turmas:** até 30 alunos por turma, com avatar em pixel art escolhido automaticamente pelo nome (pode ser trocado); turmas podem ser arquivadas. Corrigir o nome de um aluno mantém os seus pontos e histórico; "Remover aluno da turma" liberta o lugar.
 - **Pontos e níveis:** pontos individuais, atividades frequentes (ex.: "TPC entregue") e histórico com anulação segura. A cada 20 pontos o aluno sobe de fase.
 - **Vidas da turma:** a turma tem 5 vidas partilhadas; perder todas mostra _game over_.
 - **Atenção, turma!:** contagem de 10 segundos para fazer silêncio; se a turma não cumprir, perde uma vida.
@@ -63,28 +63,30 @@ Os testes usam apenas dados fictícios. Nunca acrescente backups reais como fixt
 
 ### Organização
 
-| Local                                            | Responsabilidade                                                     |
-| ------------------------------------------------ | -------------------------------------------------------------------- |
-| `index.html`                                     | Estrutura da interface (sem CSS nem JavaScript embutidos)            |
-| `assets/css/`                                    | Estilos por área: base, feedback, jogo, gestão, diário, apresentação |
-| `assets/images/`                                 | Cenário e folhas de sprites (WebP)                                   |
-| `src/app.js`                                     | Ponto de entrada: tabuleiro de jogo, overlays e ligação dos módulos  |
-| `src/diary.js`                                   | Aulas, presenças, TPC, notas, rascunhos e relatórios                 |
-| `src/hub.js`, `src/teacher.js`                   | Lista de turmas e perfil do professor                                |
-| `src/roster.js`, `src/teams.js`                  | Nomes/avatares dos alunos e equipas                                  |
-| `src/activities.js`, `src/raffle.js`             | Pontos por atividade e roleta de sorteio                             |
-| `src/attention.js`                               | Contagem "Atenção, turma!"                                           |
-| `src/backup-ui.js`                               | Ecrãs de backup, importação e avisos de gravação                     |
-| `src/persistence.js`, `src/storage.js`           | Dono do workspace; gravação local e deteção de conflitos             |
-| `src/model.js`                                   | Validação e normalização dos dados; compatibilidade de versões       |
-| `src/backup.js`                                  | Formato do backup e verificação de integridade                       |
-| `src/points.js`                                  | Condições para anular pontos em segurança                            |
-| `src/avatars.js`, `src/audio.js`                 | Personagens e sons sintetizados                                      |
-| `src/presentation.js`, `src/presentation-dom.js` | Janela de apresentação e atualização do seu DOM                      |
-| `src/dom.js`, `src/utils.js`                     | Utilitários de DOM, datas, identificadores e validações              |
-| `tests/`                                         | Testes de dados, persistência e fluxos integrados (com jsdom)        |
-| `tools/`                                         | Servidor local e preparação de `dist/`                               |
-| `docs/`                                          | Arquitetura e revisão técnica                                        |
+| Local                                            | Responsabilidade                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------- |
+| `index.html`                                     | Estrutura da interface (sem CSS nem JavaScript embutidos)                 |
+| `assets/css/`                                    | Estilos por área: base, feedback, jogo, gestão, diário, apresentação      |
+| `assets/images/`                                 | Cenário e folhas de sprites (WebP)                                        |
+| `src/app.js`                                     | Ponto de entrada: tabuleiro de jogo, overlays e ligação dos módulos       |
+| `src/diary.js`                                   | Aulas, presenças, TPC, notas, rascunhos e relatórios                      |
+| `src/diary-data.js`                              | Regras do diário (aulas, prémios de TPC) e textos dos relatórios, sem DOM |
+| `src/hub.js`, `src/teacher.js`                   | Lista de turmas e perfil do professor                                     |
+| `src/roster.js`, `src/teams.js`                  | Nomes/avatares dos alunos e equipas                                       |
+| `src/activities.js`, `src/raffle.js`             | Pontos por atividade e roleta de sorteio                                  |
+| `src/attention.js`                               | Contagem "Atenção, turma!"                                                |
+| `src/backup-ui.js`                               | Ecrãs de backup, importação e avisos de gravação                          |
+| `src/students.js`                                | Identidade dos alunos: IDs, correção de nome e remoção                    |
+| `src/persistence.js`, `src/storage.js`           | Dono do workspace; gravação local e deteção de conflitos                  |
+| `src/model.js`                                   | Validação e normalização dos dados; compatibilidade de versões            |
+| `src/backup.js`                                  | Formato do backup e verificação de integridade                            |
+| `src/points.js`                                  | Condições para anular pontos em segurança                                 |
+| `src/avatars.js`, `src/audio.js`                 | Personagens e sons sintetizados                                           |
+| `src/presentation.js`, `src/presentation-dom.js` | Janela de apresentação e atualização do seu DOM                           |
+| `src/dom.js`, `src/utils.js`                     | Utilitários de DOM, datas, identificadores e validações                   |
+| `tests/`                                         | Testes de dados, persistência e fluxos integrados (com jsdom)             |
+| `tools/`                                         | Servidor local e preparação de `dist/`                                    |
+| `docs/`                                          | Arquitetura e revisão técnica                                             |
 
 Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).
 

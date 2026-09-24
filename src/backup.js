@@ -1,5 +1,11 @@
 import { copy, validDate } from "./utils.js";
-import { validateWorkspace, validClass, emptyWorkspace } from "./model.js";
+import {
+  SUPPORTED_VERSIONS,
+  VERSION,
+  validateWorkspace,
+  validClass,
+  emptyWorkspace,
+} from "./model.js";
 
 // Shared by file and paste imports; checked before JSON parsing.
 export const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
@@ -26,7 +32,7 @@ export function packageBackup(w, scope) {
   const payload = copy(w);
   return {
     format: "tic-quest-backup",
-    version: 10,
+    version: VERSION,
     exportedAt: new Date().toISOString(),
     scope: scope || "all",
     checksum: checksum(JSON.stringify(payload)),
@@ -36,7 +42,7 @@ export function packageBackup(w, scope) {
 
 export function parseBackup(raw) {
   if (raw && raw.format === "tic-quest-backup") {
-    if ([8, 9, 10].indexOf(raw.version) < 0)
+    if (!SUPPORTED_VERSIONS.includes(raw.version))
       throw Error("Backup de uma versão não suportada.");
     if (
       !validDate(raw.exportedAt) ||

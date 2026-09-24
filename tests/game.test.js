@@ -166,6 +166,7 @@ test("renaming a student and choosing a character are saved", async () => {
     let student = stored().classes[0].students[4];
     assert.equal(student.name, "Eva");
     assert.equal(student.inPool, true);
+    assert.ok(student.id);
     $("studentGender").value = "robot";
     $("studentGender").dispatchEvent(new w.Event("change"));
     const before = stored().classes[0].students[4].avatar;
@@ -174,6 +175,34 @@ test("renaming a student and choosing a character are saved", async () => {
     assert.equal(student.avatarMode, "manual");
     assert.equal(student.gender, "robot");
     assert.notEqual(student.avatar, before);
+  } finally {
+    close(dom);
+  }
+});
+
+test("correcting a name keeps the student; removing frees the slot", async () => {
+  const { dom, w, $, input, submit, stored } = await bootWithClass();
+  try {
+    w.document.querySelector('[data-seat="0"]').click();
+    $("scorePlus").click();
+    const id = stored().classes[0].students[0].id;
+    input("studentName", "Ana Sofia");
+    submit("nameForm");
+    let saved = stored().classes[0];
+    assert.equal(saved.students[0].id, id);
+    assert.equal(saved.students[0].points, 1);
+    assert.equal(saved.history[0].recipients[0].studentId, id);
+
+    w.document.querySelector('[data-seat="0"]').click();
+    $("removeStudent").click();
+    saved = stored().classes[0];
+    assert.deepEqual(
+      [saved.students[0].id, saved.students[0].name, saved.students[0].points],
+      [null, "", 0],
+    );
+    // The history keeps the old record.
+    assert.equal(saved.history[0].recipients[0].name, "Ana");
+    assert.equal($("studentProfile").hidden, true);
   } finally {
     close(dom);
   }

@@ -1,3 +1,4 @@
+import { removeStudent, setStudentName } from "./students.js";
 import {
   autoAvatar,
   avatarFor,
@@ -8,8 +9,16 @@ import {
 
 /** Names and avatars editor. Changes stay in a draft until "Guardar". */
 export function createRoster(app) {
-  const { $, openOverlay, closeOverlay, dirty, syncAll, status, rankedIds } =
-    app;
+  const {
+    $,
+    openOverlay,
+    closeOverlay,
+    dirty,
+    syncAll,
+    status,
+    rankedIds,
+    confirmRemoval,
+  } = app;
   let draft = [];
 
   function fill() {
@@ -92,12 +101,23 @@ export function createRoster(app) {
     fill();
   };
   $("applyNames").onclick = function () {
-    app.state.students.forEach((s, i) => {
-      s.name = draft[i].name.trim().slice(0, 60);
+    const students = app.state.students,
+      names = draft.map((d) => d.name.trim().slice(0, 60));
+    // Emptied names remove students; changed names are corrections.
+    const removed = students
+      .map((s, i) => (s.name && !names[i] ? i : -1))
+      .filter((i) => i >= 0);
+    if (removed.length && !confirmRemoval(removed)) return;
+    students.forEach((s, i) => {
+      if (!names[i]) {
+        removeStudent(s);
+        return;
+      }
+      setStudentName(s, names[i]);
+      s.inPool = true;
       s.gender = draft[i].gender || "robot";
       s.avatar = avatarFor(draft[i], i);
       s.avatarMode = draft[i].avatarMode || "auto";
-      s.inPool = !!s.name;
     });
     dirty();
     syncAll();

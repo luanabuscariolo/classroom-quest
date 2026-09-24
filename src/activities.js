@@ -1,4 +1,5 @@
 import { avatarFor, sprite } from "./avatars.js";
+import { studentRef } from "./students.js";
 import { integer, uid } from "./utils.js";
 
 /**
@@ -23,7 +24,7 @@ export function createActivities(app) {
       title,
       date: new Date().toISOString(),
       points,
-      recipients: slots.map((i) => ({ slot: i, name: state.students[i].name })),
+      recipients: slots.map((i) => studentRef(state, i)),
       undoneAt: null,
     });
     return true;

@@ -99,8 +99,8 @@
   padding: 25px 0;
 }
 .wide-modal {
-  width: min(860px, 96vw) !important;
-  max-width: 860px !important;
+  width: min(860px, 96vw);
+  max-width: 860px;
 }
 .wide-modal label {
   display: block;
@@ -197,7 +197,7 @@
   font-size: 12px;
 }
 .game[hidden] {
-  display: none !important;
+  display: none;
 }
 @media (max-width: 600px) {
   .hub-emblem {
@@ -211,7 +211,7 @@
     padding-top: 20px;
   }
   .wide-modal {
-    padding: 16px !important;
+    padding: 16px;
   }
   .modal-heading h2 {
     font-size: 15px;
@@ -231,7 +231,7 @@
   background-image: url(../images/teachers.webp) !important;
   background-size: var(--master-size) !important;
   background-position: var(--master-position) !important;
-  background-repeat: no-repeat !important;
+  background-repeat: no-repeat;
 }
 #masterAvatar[data-sheet="masters"] {
   width: 196px;
@@ -239,103 +239,9 @@
   margin: auto;
   display: block;
 }
-.master-change {
-  display: block;
-  margin: 6px auto;
-}
-.teacher-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
-  margin: 20px 0;
-}
-.teacher-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  padding: 12px;
-  border: 1px solid #8c76b0;
-  background: #201934;
-}
-.teacher-card.active {
-  border: 2px solid #ffe078;
-  background: #3b2d4b;
-}
-.teacher-card strong {
-  overflow-wrap: anywhere;
-  text-align: center;
-}
-.teacher-card small {
-  color: #c4b9d8;
-}
 .teacher-thumb {
   width: 110px;
   height: 120px;
-}
-.teacher-avatars {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-}
-.avatar-choice {
-  padding: 5px !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 10px !important;
-  white-space: normal !important;
-}
-.avatar-choice[aria-pressed="true"] {
-  border-color: #ffe16c;
-  background: #695137;
-  outline: 2px solid #ffe16c;
-}
-.teacher-choice-sprite {
-  display: block;
-  width: 100%;
-  height: 110px;
-}
-.teacher-fields {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-.teacher-fields > div {
-  flex: 1;
-}
-.teacher-draft-avatar {
-  width: 125px;
-  height: 150px;
-  flex-shrink: 0;
-}
-#teacherEditor {
-  border-top: 2px solid #8c76b0;
-  margin-top: 20px;
-  padding-top: 15px;
-}
-#teachersOverlay .modal {
-  max-height: 92vh;
-  overflow: auto;
-}
-@media (max-width: 600px) {
-  .teacher-avatars {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .teacher-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .teacher-fields {
-    gap: 10px;
-  }
-  .teacher-draft-avatar {
-    width: 90px;
-    height: 115px;
-  }
-  .teacher-choice-sprite {
-    width: 110px;
-    height: 120px;
-  }
 }
 .teacher-onboarding {
   padding: 20px;

@@ -42,10 +42,6 @@
 }
 .player {
   background: linear-gradient(145deg, #3d2d65, #241b44);
-  border-top-color: #9b83b4;
-  box-shadow:
-    0 4px 0 #171029,
-    inset 0 1px 0 #b69cd41f;
 }
 .player-button {
   position: relative;
@@ -134,9 +130,6 @@
   max-width: calc(100vw - 30px);
   white-space: nowrap;
 }
-.life-toast[hidden] {
-  display: none;
-}
 .life-toast.loss {
   background: #54213e;
   border-color: #ff91bb;
@@ -190,9 +183,6 @@
   position: relative;
   isolation: isolate;
   text-align: center;
-  width: min(520px, 100%);
-  overflow: hidden;
-  padding: 28px;
   border: 3px solid #b98ce8;
   background: radial-gradient(ellipse at 50% 40%, #593579, #211638 78%);
   box-shadow:
@@ -205,39 +195,6 @@
   font-size: 0.8rem;
   letter-spacing: 0.17em;
 }
-.draw-orbit {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 172px;
-  height: 172px;
-  margin: 25px auto 22px;
-}
-.draw-orbit:before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 3px dashed #c68de4;
-  border-radius: 50%;
-  animation: orbit 9s linear infinite;
-}
-.draw-orbit:after {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 2px solid #8364b2;
-  border-radius: 50%;
-  box-shadow:
-    0 0 22px #ca85ed33,
-    inset 0 0 22px #ca85ed22;
-}
-.draw-avatar {
-  position: relative;
-  z-index: 1;
-  font-size: 85px;
-  line-height: 1.1;
-  filter: drop-shadow(0 7px 0 #160c36);
-}
 .shuffle-tick {
   animation: shuffle-tick 0.12s ease-out;
 }
@@ -245,10 +202,8 @@
   font:
     900 clamp(1.4rem, 5vw, 2rem) ui-monospace,
     monospace;
-  margin: 12px 0 6px;
   color: #fff5dc;
   overflow-wrap: anywhere;
-  min-height: 2.5rem;
 }
 .draw-seat {
   color: #cdb4eb;
@@ -258,7 +213,6 @@
   height: 12px;
   border: 2px solid #bc89d7;
   background: #150e2a;
-  margin: 24px 10px 14px;
   padding: 2px;
 }
 .suspense-fill {
@@ -411,7 +365,6 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .draw-orbit:before,
   .winner-modal,
   .winner-modal .big-avatar,
   .hp-gain,
@@ -487,8 +440,6 @@
 .attention-modal {
   text-align: center;
   width: min(610px, 100%);
-  border-color: #ffd354;
-  background: radial-gradient(ellipse, #684e72, #2e204b 76%);
 }
 .attention-modal h2 {
   font-size: 1.5rem;
@@ -497,23 +448,19 @@
   font:
     900 clamp(5rem, 20vw, 9rem) ui-monospace,
     monospace;
-  color: #ffd354;
   line-height: 1.2;
-  text-shadow: 5px 5px 0 #aa5f57;
 }
 .attention-beat {
   animation: attention-beat 0.45s ease-out;
 }
 .attention-progress {
   height: 13px;
-  background: #160e2c;
   border: 2px solid #b798c5;
   margin: 10px auto 20px;
   max-width: 380px;
 }
 .attention-fill {
   height: 100%;
-  background: #ffd354;
   width: 100%;
   transition: width 0.15s linear;
 }
@@ -523,19 +470,6 @@
   gap: 12px;
   flex-wrap: wrap;
   margin-top: 20px;
-}
-.attention-decisions[hidden] {
-  display: none;
-}
-.attention-note {
-  color: #ddcde9;
-  font-size: 0.85rem;
-}
-.hud-stat small {
-  display: block;
-  color: #d6bfe6;
-  font-size: 0.72rem;
-  margin-top: 6px;
 }
 @keyframes attention-beat {
   from {
@@ -552,27 +486,6 @@
     animation: none !important;
   }
 }
-@media (max-width: 850px) {
-  .hud-stat {
-    display: flex;
-    grid-column: 1/-1;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-    border-left: 0;
-    border-top: 1px solid #6b5686;
-    padding: 10px 0 0;
-  }
-  .hud-stat strong {
-    margin: 0;
-    font-size: 1.3rem;
-  }
-  .hud-stat small {
-    margin: 0;
-  }
-}
-
 /* Warning palette */
 .attention-modal {
   position: relative;
@@ -623,9 +536,6 @@
 .attention-modal .button.pink {
   background: #bd3836;
   border-color: #ff9c87;
-}
-.attention-note {
-  color: #efd2b3 !important;
 }
 #attentionOverlay[data-level="urgent"] .attention-modal {
   border-color: #ff7863;

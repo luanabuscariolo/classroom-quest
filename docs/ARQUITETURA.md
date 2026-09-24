@@ -8,7 +8,7 @@ Os módulos dividem-se em três camadas:
 
 | Camada                | Módulos                                                                                                                                      | Regra                                                         |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Dados (sem DOM)       | `model.js`, `backup.js`, `storage.js`, `persistence.js`, `points.js`, `utils.js`                                                             | Testáveis isoladamente; recebem e devolvem dados normalizados |
+| Dados (sem DOM)       | `model.js`, `backup.js`, `storage.js`, `persistence.js`, `points.js`, `diary-data.js`, `utils.js`                                            | Testáveis isoladamente; recebem e devolvem dados normalizados |
 | Controladores de ecrã | `teacher.js`, `hub.js`, `roster.js`, `teams.js`, `activities.js`, `attention.js`, `raffle.js`, `backup-ui.js`, `diary.js`, `presentation.js` | Cada um liga os seus botões e guarda o seu estado temporário  |
 | Apoio à interface     | `dom.js`, `avatars.js`, `audio.js`, `presentation-dom.js`                                                                                    | Funções pequenas partilhadas                                  |
 
@@ -26,13 +26,24 @@ Um workspace contém professores, turmas, atividades frequentes, revisão e meta
 
 ### Versões e compatibilidade
 
-São aceites saves de turma nas versões 1–6 e workspaces/backups nas versões 8–10; `model.js` converte-os sempre para o formato atual. A chave `tic-quest.workspace.v8` foi mantida apesar da versão 10 para que os dados já gravados na mesma origem continuem a ser lidos. Importar como cópias preserva as turmas atuais; substituir pede confirmação e descarrega antes um backup preventivo.
+O formato atual é a versão 11 (`VERSION` em `model.js`). São aceites saves de turma nas versões 1–6 e workspaces/backups nas versões 8–11; `model.js` converte-os sempre para o formato atual. A chave `tic-quest.workspace.v8` foi mantida para que os dados já gravados na mesma origem continuem a ser lidos. Versões antigas da aplicação não abrem backups da versão 11. Importar como cópias preserva as turmas atuais; substituir pede confirmação e descarrega antes um backup preventivo.
 
 Os antigos perfis de demonstração (IDs `master-*`) continuam nos backups, mas não preenchem o nome do professor.
+
+### Identidade dos alunos (versão 11)
+
+Cada turma tem 30 posições fixas. Cada aluno com nome tem também um `id` que não muda quando o nome é corrigido (`students.js`). Lançamentos do histórico, linhas de presença e notas guardam `{ slot, studentId, name }`; o nome fica como registo do momento.
+
+- Escrever um nome numa posição vazia cria um aluno novo (novo `id`).
+- Mudar um nome existente é uma correção: pontos, histórico, desfazer e TPC continuam ligados.
+- "Remover aluno da turma" (ou apagar o nome) liberta a posição: `id` nulo, pontos a zero, sai das equipas. Os registos antigos mantêm-se, mas deixam de poder ser desfeitos ou premiados.
+- `sameStudent()` decide se uma posição ainda tem o aluno de um registo. Registos anteriores à versão 11 foram ligados pelo nome na migração; os que já não coincidiam ficam com `studentId: null` e continuam a comparar o nome.
 
 A cópia `.previous` serve para recuperação: se a gravação principal não puder ser lida, abre-se a cópia anterior e a gravação automática fica suspensa. Não substitui um backup descarregado. Uma quota excedida ou armazenamento bloqueado deixa um aviso visível (`backup-ui.js`).
 
 ## Rascunho do diário
+
+`diary.js` controla o ecrã; as regras (numeração de aulas, quem pode receber pontos de TPC, ligação `awardId`) e os textos dos relatórios estão em `diary-data.js`, testados em `tests/diary.test.js`.
 
 Ao abrir uma turma, `prepareDayDraft()` copia o diário persistido antes de renderizar. Edições mudam o rascunho. `saveDayEdits()` confirma o rascunho no workspace e tenta a gravação local. Navegar ou fechar com alterações solicita guardar; cancelar conserva a edição.
 

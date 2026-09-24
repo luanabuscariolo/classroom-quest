@@ -109,14 +109,12 @@
 .game-avatar {
   background-image: url("../images/students-classic.webp") !important;
   display: inline-block;
-  background-size: 400% 400% !important;
+  background-size: 400% 400%;
   background-repeat: no-repeat !important;
   image-rendering: pixelated;
   flex-shrink: 0;
 }
 .avatar.game-avatar {
-  width: 52px;
-  height: 52px;
   line-height: 1;
   margin: 1px auto 3px;
 }
@@ -131,9 +129,6 @@
   width: 190px;
   height: 190px;
   margin: 10px auto;
-}
-.player-button {
-  min-height: 108px;
 }
 .player {
   border-color: #685693;
@@ -189,7 +184,6 @@
   padding: 7px 0;
 }
 .roster-list {
-  max-height: 48vh;
   overflow: auto;
   padding-right: 5px;
 }
@@ -203,13 +197,7 @@
 }
 .roster-row input,
 .roster-row select {
-  width: 100%;
   padding: 7px;
-  font-size: 0.85rem;
-}
-.roster-row button {
-  padding: 5px;
-  min-height: 34px;
 }
 .avatar-controls {
   display: flex;
@@ -219,6 +207,11 @@
 }
 .avatar-controls select {
   flex: 1;
+}
+.remove-student {
+  display: block;
+  width: calc(100% - 30px);
+  margin: 0 15px 15px;
 }
 .attention-result {
   margin: 18px 0;
@@ -230,9 +223,6 @@
     900 1.3rem ui-monospace,
     monospace;
 }
-.attention-result[hidden] {
-  display: none;
-}
 .bulk-names {
   margin-bottom: 14px;
 }
@@ -243,13 +233,6 @@
   width: min(760px, 100%);
 }
 @media (min-width: 1101px) and (max-height: 1100px) {
-  .avatar.game-avatar {
-    width: 46px;
-    height: 46px;
-  }
-  .player-button {
-    min-height: 90px;
-  }
   .board-floor {
     padding: 10px;
   }
@@ -270,7 +253,6 @@
   }
   .roster-row input,
   .roster-row select {
-    font-size: 0.78rem;
     padding: 6px 3px;
   }
   .modal-roster {
@@ -289,8 +271,7 @@
 }
 .arena-footer,
 .brand small,
-#ready,
-.attention-note {
+#ready {
   display: none;
 }
 .stage {
@@ -329,7 +310,6 @@
 }
 .stage-actor {
   position: absolute;
-  left: 8%;
   bottom: 23%;
   width: 68px;
   height: 80px;
@@ -394,9 +374,6 @@
     900 clamp(1.5rem, 4vw, 3rem) ui-monospace,
     monospace;
   z-index: 5;
-}
-.stage-gameover[hidden] {
-  display: none;
 }
 .stage.dead {
   filter: saturate(0.45);
@@ -654,7 +631,6 @@
 }
 .master-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
   padding: 4px 12px 15px;
 }
@@ -686,6 +662,6 @@
 .game-avatar[data-sheet="teacher"] {
   background-image: url(../images/teacher-default.webp) !important;
   background-size: contain !important;
-  background-position: center bottom !important;
-  background-repeat: no-repeat !important;
+  background-position: center bottom;
+  background-repeat: no-repeat;
 }

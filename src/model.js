@@ -1,4 +1,9 @@
 import { uid, validDate, integer, textField, validDay } from "./utils.js";
+import { emptyStudent } from "./students.js";
+
+/** Current workspace and backup format. Version 11 added student ids. */
+export const VERSION = 11;
+export const SUPPORTED_VERSIONS = [8, 9, 10, 11];
 /** Class save in the legacy format (versions 1–6), normalized to version 6. */
 export function validate(raw) {
   if (
@@ -24,6 +29,7 @@ export function validate(raw) {
     )
       throw Error("Dados de aluno inválidos.");
     return {
+      id: textField(s.id, 100) && s.id ? s.id : null,
       name: s.name.trim().slice(0, 60),
       points: s.points,
       inPool: typeof s.inPool === "boolean" ? s.inPool : !!s.name.trim(),
@@ -36,15 +42,7 @@ export function validate(raw) {
         s.avatarMode === "auto" ? "auto" : s.gender ? "manual" : "auto",
     };
   });
-  while (students.length < 30)
-    students.push({
-      name: "",
-      points: 0,
-      inPool: false,
-      gender: "robot",
-      avatar: null,
-      avatarMode: "auto",
-    });
+  while (students.length < 30) students.push(emptyStudent());
   const groups = raw.groups.map((g) => {
     if (!g || !Number.isSafeInteger(g.points))
       throw Error("Dados de equipa inválidos.");
@@ -84,7 +82,7 @@ export function defaultPresets() {
 export function emptyWorkspace() {
   return {
     format: "tic-quest-workspace",
-    version: 10,
+    version: VERSION,
     revision: 0,
     teachers: defaultTeachers(),
     activeTeacherId: null,
@@ -99,6 +97,34 @@ export function validClass(raw) {
   const c = validate(raw);
   c.id = typeof raw.id === "string" && raw.id.length <= 100 ? raw.id : uid();
   c.archived = raw.archived === true;
+  // Named students keep their id (version 11) or get a new one (migration).
+  const studentIds = new Set();
+  c.students.forEach((s) => {
+    if (!s.name) {
+      s.id = null;
+      return;
+    }
+    if (!s.id) s.id = uid();
+    if (studentIds.has(s.id))
+      throw Error("Identificadores de aluno repetidos.");
+    studentIds.add(s.id);
+  });
+  /**
+   * Records from before version 11 have no studentId: link them to the
+   * student now in that slot only when the name still matches.
+   */
+  const studentIdFor = (record) => {
+    if (record.studentId === undefined) {
+      const s = c.students[record.slot];
+      return s && s.name && s.name === record.name ? s.id : null;
+    }
+    if (
+      record.studentId === null ||
+      (textField(record.studentId, 100) && record.studentId)
+    )
+      return record.studentId;
+    throw Error("Identificador de aluno inválido.");
+  };
   c.history = [];
   if (raw.history !== undefined) {
     if (!Array.isArray(raw.history) || raw.history.length > 10000)
@@ -131,7 +157,7 @@ export function validClass(raw) {
         )
           throw Error("Alunos do histórico inválidos.");
         slots.add(r.slot);
-        return { slot: r.slot, name: r.name };
+        return { slot: r.slot, studentId: studentIdFor(r), name: r.name };
       });
       if (
         e.undoneAt !== null &&
@@ -150,8 +176,12 @@ export function validClass(raw) {
     });
   }
   c.diary = validateDiary(raw.diary);
+  c.diary.notes.forEach((n) => {
+    n.studentId = n.slot === null ? null : studentIdFor(n);
+  });
   c.diary.lessons.forEach((l) => {
     l.attendance.forEach((r) => {
+      r.studentId = studentIdFor(r);
       if (
         r.awardId &&
         !c.history.some(
@@ -169,7 +199,7 @@ export function validateWorkspace(raw) {
   if (
     !raw ||
     raw.format !== "tic-quest-workspace" ||
-    [8, 9, 10].indexOf(raw.version) < 0
+    !SUPPORTED_VERSIONS.includes(raw.version)
   )
     throw Error(
       "Versão não suportada. Usa uma versão compatível do TIC Quest.",
@@ -308,6 +338,7 @@ export function validateDiary(raw) {
         slots.add(r.slot);
         return {
           slot: r.slot,
+          studentId: r.studentId,
           name: r.name,
           status: r.status,
           note: r.note,
@@ -341,7 +372,14 @@ export function validateDiary(raw) {
     )
       throw Error("Nota privada inválida.");
     ids.add(n.id);
-    return { id: n.id, date: n.date, text: n.text, slot: n.slot, name: n.name };
+    return {
+      id: n.id,
+      date: n.date,
+      text: n.text,
+      slot: n.slot,
+      studentId: n.studentId,
+      name: n.name,
+    };
   });
   return out;
 }

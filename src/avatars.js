@@ -10,30 +10,60 @@ export const maleNames = new Set(
   ),
 );
 
-export function autoAvatar(s, i) {
-  if (s.avatarMode === "manual") return;
-  const name = s.name
+// Male names ending in "a" that the ending rule below would get wrong.
+const maleEndingInA = new Set(
+  "luca joshua nikita mustafa moussa issa".split(" "),
+);
+
+/**
+ * Gender suggested by the first name: known lists first, then the Portuguese
+ * ending (-a feminine, -o masculine). Returns null when the name gives no hint.
+ */
+export function guessGender(fullName) {
+  const name = fullName
     .trim()
     .split(/\s+/)[0]
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-  s.gender =
-    Math.random() < 0.28
-      ? "robot"
-      : femaleNames.has(name)
-        ? "f"
-        : maleNames.has(name)
-          ? "m"
-          : "robot";
-  const options =
-    s.gender === "f"
-      ? [28, 29, 30, 31]
-      : s.gender === "m"
-        ? [24, 25, 26, 27]
-        : [16, 17, 18, 19, 20, 21, 22, 23];
-  s.avatar = options[Math.floor(Math.random() * options.length)];
+  if (femaleNames.has(name)) return "f";
+  if (maleNames.has(name) || maleEndingInA.has(name)) return "m";
+  if (/a$/.test(name)) return "f";
+  if (/o$/.test(name)) return "m";
+  return null;
+}
+
+const AUTO_AVATARS = {
+  f: [28, 29, 30, 31],
+  m: [24, 25, 26, 27],
+  robot: [16, 17, 18, 19, 20, 21, 22, 23],
+};
+// Every student has the same chance of a robot, so no name stands out.
+const ROBOT_CHANCE = 0.28;
+
+/**
+ * Random character: a robot for anyone (28%), otherwise the gender suggested
+ * by the name, or a random gender when the name gives no hint. Keeps the
+ * current avatar unless the name now points to the other gender, so fixing a
+ * typo does not swap it. Manual choices are never changed.
+ */
+export function autoAvatar(s, i) {
+  if (s.avatarMode === "manual") return;
+  const hint = guessGender(s.name);
   s.avatarMode = "auto";
+  const current = AUTO_AVATARS[s.gender];
+  if (
+    current &&
+    current.includes(s.avatar) &&
+    (s.gender === "robot" || !hint || s.gender === hint)
+  )
+    return;
+  s.gender =
+    Math.random() < ROBOT_CHANCE
+      ? "robot"
+      : hint || (Math.random() < 0.5 ? "f" : "m");
+  const options = AUTO_AVATARS[s.gender];
+  s.avatar = options[Math.floor(Math.random() * options.length)];
 }
 
 export function avatarChoices(gender) {

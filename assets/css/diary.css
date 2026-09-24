@@ -1,7 +1,7 @@
 .diary-modal {
-  width: min(1220px, 96vw) !important;
-  max-width: 1220px !important;
-  max-height: 94vh !important;
+  width: min(1220px, 96vw);
+  max-width: 1220px;
+  max-height: 94vh;
   overflow: auto;
 }
 .diary-toolbar {
@@ -113,7 +113,6 @@
 .attendance-row .field {
   min-width: 0;
   width: 100%;
-  margin: 0 !important;
 }
 .diary-hint {
   font-size: 12px;
@@ -178,9 +177,6 @@
   .diary-layout {
     grid-template-columns: 1fr;
   }
-  .diary-calendar {
-    max-width: none;
-  }
   .calendar-day {
     min-height: 38px;
   }
@@ -191,7 +187,7 @@
     grid-column: 1/-1;
   }
   .diary-modal {
-    padding: 15px !important;
+    padding: 15px;
   }
   .diary-two {
     grid-template-columns: 1fr;
@@ -298,7 +294,7 @@
 .silence-active .game-avatar,
 .silence-active .stage-actor {
   animation: none !important;
-  transform: none !important;
+  transform: none;
 }
 .master-actions {
   grid-template-columns: 1fr;

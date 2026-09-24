@@ -2,6 +2,7 @@ import { packageBackup } from "./backup.js";
 import { autoAvatar } from "./avatars.js";
 import { downloadJSON } from "./dom.js";
 import { emptyDiary, emptyWorkspace } from "./model.js";
+import { emptyStudent, setStudentName } from "./students.js";
 import { copy, stamp, uid } from "./utils.js";
 
 /** Class list: create, duplicate, archive and export classes. */
@@ -148,15 +149,11 @@ export function createHub(app) {
       diary: emptyDiary(),
     };
     for (let i = 0; i < 30; i++) {
-      const s = {
-        name: names[i] || "",
-        points: 0,
-        inPool: !!names[i],
-        gender: "robot",
-        avatarMode: "auto",
-        avatar: 16,
-      };
-      autoAvatar(s, i);
+      const s = emptyStudent();
+      if (names[i]) {
+        setStudentName(s, names[i]);
+        autoAvatar(s, i);
+      }
       c.students.push(s);
     }
     app.workspace.classes.push(c);
