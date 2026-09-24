@@ -10,3 +10,4 @@ TIC_*.json
 TIC_*.txt
 backups/
 dist/
+.claude/

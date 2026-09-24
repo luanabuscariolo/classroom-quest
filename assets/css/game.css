@@ -107,7 +107,7 @@
 }
 
 .game-avatar {
-  background-image: url("../images/students-classic.png") !important;
+  background-image: url("../images/students-classic.webp") !important;
   display: inline-block;
   background-size: 400% 400% !important;
   background-repeat: no-repeat !important;
@@ -282,7 +282,7 @@
 }
 
 .game-avatar[data-sheet="new"] {
-  background-image: url("../images/students-extra.png") !important;
+  background-image: url("../images/students-extra.webp") !important;
 }
 .hud {
   grid-template-columns: minmax(240px, 1fr) auto;
@@ -299,7 +299,7 @@
   min-height: 195px;
   overflow: hidden;
   border-bottom: 4px solid #130b29;
-  background: #241538 url("../images/classroom-stage.png") center/100% 100%
+  background: #241538 url("../images/classroom-stage.webp") center/100% 100%
     no-repeat;
   image-rendering: pixelated;
   isolation: isolate;
@@ -684,7 +684,7 @@
   }
 }
 .game-avatar[data-sheet="teacher"] {
-  background-image: url(../images/teacher-default.png) !important;
+  background-image: url(../images/teacher-default.webp) !important;
   background-size: contain !important;
   background-position: center bottom !important;
   background-repeat: no-repeat !important;

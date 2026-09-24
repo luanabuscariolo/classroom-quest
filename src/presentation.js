@@ -5,7 +5,7 @@ export function createPresentation(app) {
   let presentationWindow = null,
     presentationTimer = null,
     projectionSignature = "";
-  var projectionAllowed = [
+  const projectionAllowed = [
     "draw",
     "cancelDraw",
     "winnerPoint",
@@ -31,7 +31,7 @@ export function createPresentation(app) {
       return;
     }
     try {
-      var doc = presentationWindow.document,
+      const doc = presentationWindow.document,
         host = doc.getElementById("projectionRoot");
       if (!host) return;
       if ($("gameMain").hidden) {
@@ -45,7 +45,7 @@ export function createPresentation(app) {
         "silence-active",
         !$("attentionOverlay").hidden,
       );
-      var nodes = [],
+      const nodes = [],
         game = presentationCopy($("gameMain"));
       game.hidden = false;
       game
@@ -53,22 +53,18 @@ export function createPresentation(app) {
         .appendChild(element("strong", "pixel", app.state.className));
       nodes.push(game);
       ["drawOverlay", "winnerOverlay", "attentionOverlay", "lifeToast"].forEach(
-        function (id) {
-          var source = $(id);
+        (id) => {
+          const source = $(id);
           if (source && !source.hidden) nodes.push(presentationCopy(source));
         },
       );
-      var signature = nodes
-        .map(function (n) {
-          return n.outerHTML;
-        })
-        .join("");
+      const signature = nodes.map((n) => n.outerHTML).join("");
       if (signature !== projectionSignature) {
         syncProjectionNodes(host, nodes);
         projectionSignature = signature;
       }
       if (!$("drawOverlay").hidden) {
-        var canvas = host.querySelector("#nameWheel");
+        const canvas = host.querySelector("#nameWheel");
         if (canvas) canvas.getContext("2d").drawImage($("nameWheel"), 0, 0);
       }
     } catch (e) {
@@ -77,16 +73,16 @@ export function createPresentation(app) {
     }
   }
   function presentationCopy(source) {
-    var clone = source.cloneNode(true);
+    const clone = source.cloneNode(true);
     clone
       .querySelectorAll(
         "script,form,input,select,textarea,#ready,#status,#projectStatus,#bootWarning,.backup-strip,.topbar .actions,.arena-controls,.avatar-controls,#masterChange,#teamsOpen",
       )
-      .forEach(function (el) {
+      .forEach((el) => {
         el.remove();
       });
-    clone.querySelectorAll("button").forEach(function (b) {
-      var allowed =
+    clone.querySelectorAll("button").forEach((b) => {
+      const allowed =
         projectionAllowed.includes(b.id) ||
         b.hasAttribute("data-seat") ||
         b.dataset.close === "winnerOverlay";
@@ -96,8 +92,8 @@ export function createPresentation(app) {
         b.removeAttribute("onclick");
       }
     });
-    clone.querySelectorAll("*").forEach(function (el) {
-      Array.from(el.attributes).forEach(function (a) {
+    clone.querySelectorAll("*").forEach((el) => {
+      Array.from(el.attributes).forEach((a) => {
         if (a.name.startsWith("on")) el.removeAttribute(a.name);
       });
       el.removeAttribute("contenteditable");
@@ -121,7 +117,7 @@ export function createPresentation(app) {
       );
       return;
     }
-    var doc = presentationWindow.document;
+    const doc = presentationWindow.document;
     doc.open();
     doc.write(
       '<!doctype html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TIC Quest · Apresentação</title></head><body><div id="projectionRoot"></div></body></html>',
@@ -143,21 +139,21 @@ export function createPresentation(app) {
     $("projectStatus").textContent =
       "Apresentação aberta. Move a nova janela para o projetor; mantém o diário no teu ecrã.";
 
-    doc.addEventListener("click", function (e) {
-      var b = e.target.closest("button");
+    doc.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
       if (!b || b.disabled) return;
       if (b.hasAttribute("data-seat")) {
-        var i = Number(b.dataset.seat);
+        const i = Number(b.dataset.seat);
         if (Number.isInteger(i) && app.state.students[i]) selectStudent(i);
       } else if (b.dataset.close === "winnerOverlay")
         closeOverlay("winnerOverlay");
       else if (projectionAllowed.includes(b.id)) {
-        var target = $(b.id);
+        const target = $(b.id);
         if (target && !target.disabled) target.click();
       }
       mirrorPresentation();
     });
-    doc.addEventListener("click", function (e) {
+    doc.addEventListener("click", (e) => {
       if (!e.target.closest(".player,.character,.overlay,button")) {
         clearSelection();
         mirrorPresentation();

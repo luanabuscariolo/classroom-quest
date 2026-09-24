@@ -8,7 +8,7 @@ export function createAudio(document, window) {
   function ensureAudio() {
     if (!soundEnabled) return false;
     try {
-      var Context = window.AudioContext || window.webkitAudioContext;
+      const Context = window.AudioContext || window.webkitAudioContext;
       if (!Context) {
         $("soundToggle").textContent = "Som indisponível";
         return false;
@@ -17,14 +17,14 @@ export function createAudio(document, window) {
         audioContext = new Context();
         audioMaster = audioContext.createGain();
         audioMaster.gain.value = 0.85 * audioVolume;
-        var compressor = audioContext.createDynamicsCompressor();
+        const compressor = audioContext.createDynamicsCompressor();
         compressor.threshold.value = -8;
         compressor.ratio.value = 8;
         audioMaster.connect(compressor);
         compressor.connect(audioContext.destination);
       }
       if (audioContext.state === "suspended")
-        audioContext.resume().catch(function () {});
+        audioContext.resume().catch(() => {});
       $("soundToggle").dataset.audioState = audioContext.state;
       return true;
     } catch (e) {
@@ -34,9 +34,9 @@ export function createAudio(document, window) {
   function notes(sequence, type) {
     if (!soundEnabled || !ensureAudio()) return;
     try {
-      var start = audioContext.currentTime + 0.015;
-      sequence.forEach(function (note) {
-        var oscillator = audioContext.createOscillator(),
+      const start = audioContext.currentTime + 0.015;
+      sequence.forEach((note) => {
+        const oscillator = audioContext.createOscillator(),
           gain = audioContext.createGain(),
           at = start + note[1],
           duration = note[2];
@@ -64,7 +64,7 @@ export function createAudio(document, window) {
     }
   }
   function playSound(kind) {
-    var cues = {
+    const cues = {
       select: [[520, 0, 0.035]],
       point: [
         [650, 0, 0.08],
@@ -126,7 +126,7 @@ export function createAudio(document, window) {
   };
   document.addEventListener(
     "click",
-    function () {
+    () => {
       if (soundEnabled) ensureAudio();
     },
     true,
@@ -141,7 +141,7 @@ export function createAudio(document, window) {
         0.02,
       );
   });
-  $("volume").addEventListener("change", function () {
+  $("volume").addEventListener("change", () => {
     playSound("point");
   });
 

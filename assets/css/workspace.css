@@ -161,23 +161,6 @@
 .activity-students span:last-child {
   overflow-wrap: anywhere;
 }
-.history-entry {
-  padding: 16px;
-  margin: 12px 0;
-  border: 1px solid #76658b;
-  background: #251c39;
-}
-.history-entry h3 {
-  margin: 0 0 8px;
-}
-.history-entry p {
-  font-size: 13px;
-  color: #c7bfdc;
-  overflow-wrap: anywhere;
-}
-.history-entry.undone {
-  opacity: 0.6;
-}
 .backup-receipt {
   border: 2px solid #77dfb5;
   padding: 15px;
@@ -245,7 +228,7 @@
 }
 
 .game-avatar[data-sheet="masters"] {
-  background-image: url(../images/teachers.png) !important;
+  background-image: url(../images/teachers.webp) !important;
   background-size: var(--master-size) !important;
   background-position: var(--master-position) !important;
   background-repeat: no-repeat !important;

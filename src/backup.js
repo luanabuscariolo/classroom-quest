@@ -14,8 +14,8 @@ export function parseBackupText(text) {
   return parseBackup(JSON.parse(text.replace(/^\uFEFF/, "").trim()));
 }
 export function checksum(s) {
-  var h = 2166136261;
-  for (var i = 0; i < s.length; i++) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
@@ -23,14 +23,14 @@ export function checksum(s) {
 }
 
 export function packageBackup(w, scope) {
-  var payload = copy(w);
+  const payload = copy(w);
   return {
     format: "tic-quest-backup",
     version: 10,
     exportedAt: new Date().toISOString(),
     scope: scope || "all",
     checksum: checksum(JSON.stringify(payload)),
-    payload: payload,
+    payload,
   };
 }
 
@@ -55,7 +55,7 @@ export function parseBackup(raw) {
   }
   if (raw && raw.format === "tic-quest-workspace")
     return { workspace: validateWorkspace(raw), date: null, legacy: false };
-  var c = validClass(raw),
+  const c = validClass(raw),
     w = emptyWorkspace();
   w.classes = [c];
   w.activeClassId = c.id;

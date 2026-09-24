@@ -1,18 +1,18 @@
-export var femaleNames = new Set(
-  "ana maria joana beatriz bia ines carolina mariana sofia laura leonor matilde margarida alice lara clara isabel sara sarah francisca camila julia helena rita catarina diana luana leticia luisa vera raquel ines eva ines emilia valentina madalena iris vitoria adriana amelia aline andrea amanda bruna carla daniela elisa fatima gabriela helena ines liana liliana lucia luiza marta monica natalia patricia paula renata susana talita teresa vanessa viviane yasmin".split(
+export const femaleNames = new Set(
+  "adriana alice aline amanda amelia ana andrea beatriz bia bruna camila carla carolina catarina clara daniela diana elisa emilia eva fatima francisca gabriela helena ines iris isabel joana julia lara laura leonor leticia liana liliana luana lucia luisa luiza madalena margarida maria mariana marta matilde monica natalia patricia paula raquel renata rita sara sarah sofia susana talita teresa valentina vanessa vera vitoria viviane yasmin".split(
     " ",
   ),
 );
 
-export var maleNames = new Set(
-  "joao jose antonio manuel pedro miguel tiago diogo rodrigo afonso francisco tomas duarte guilherme santiago gabriel rafael lucas davi david daniel bernardo salvador henrique goncalo andre bruno eduardo martim luis nuno paulo ricardo rui sergio simao vitor vitoria victor ze zeca alex alexandre artur arthur caio carlos cesar diego enzo felipe gustavo hugo igor isaac jorge juliano leonardo luciano mario mateus matheus murilo otavio renato samuel thiago vinicius william".split(
+export const maleNames = new Set(
+  "afonso alex alexandre andre antonio arthur artur bernardo bruno caio carlos cesar daniel davi david diego diogo duarte eduardo enzo felipe francisco gabriel goncalo guilherme gustavo henrique hugo igor isaac joao jorge jose juliano leonardo lucas luciano luis manuel mario martim mateus matheus miguel murilo nuno otavio paulo pedro rafael renato ricardo rodrigo rui salvador samuel santiago sergio simao thiago tiago tomas victor vinicius vitor william ze zeca".split(
     " ",
   ),
 );
 
 export function autoAvatar(s, i) {
   if (s.avatarMode === "manual") return;
-  var name = s.name
+  const name = s.name
     .trim()
     .split(/\s+/)[0]
     .normalize("NFD")
@@ -26,7 +26,7 @@ export function autoAvatar(s, i) {
         : maleNames.has(name)
           ? "m"
           : "robot";
-  var options =
+  const options =
     s.gender === "f"
       ? [28, 29, 30, 31]
       : s.gender === "m"
@@ -45,7 +45,7 @@ export function avatarChoices(gender) {
 }
 
 export function avatarFor(s, i) {
-  var options = avatarChoices(s.gender);
+  const options = avatarChoices(s.gender);
   return Number.isInteger(s.avatar) && s.avatar >= 0 && s.avatar < 32
     ? s.avatar
     : options[i % options.length];
@@ -73,7 +73,7 @@ export function masterSprite(node, index) {
     node.style.backgroundPosition = "center bottom";
     return;
   }
-  var i = index - 1,
+  const i = index - 1,
     col = i % 3,
     row = Math.floor(i / 3),
     xs = [50, 440, 840],
@@ -92,4 +92,25 @@ export function masterSprite(node, index) {
     "--master-position",
     (x / (1254 - w)) * 100 + "% " + (y / (1254 - h)) * 100 + "%",
   );
+}
+
+/** Next avatar of the same character type; the choice becomes manual. */
+export function cycleAvatar(student, slot) {
+  const options = avatarChoices(student.gender);
+  student.avatar =
+    options[(options.indexOf(avatarFor(student, slot)) + 1) % options.length];
+  student.avatarMode = "manual";
+}
+
+/** Apply a "Personagem" choice: "auto" or a fixed character type. */
+export function setCharacter(student, slot, value) {
+  if (value === "auto") {
+    student.avatarMode = "auto";
+    autoAvatar(student, slot);
+  } else {
+    student.avatarMode = "manual";
+    student.gender = value;
+    const options = avatarChoices(student.gender);
+    student.avatar = options[slot % options.length];
+  }
 }

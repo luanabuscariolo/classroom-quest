@@ -1,86 +1,109 @@
 # TIC Quest · Classroom Quest
 
-Jogo de sala de aula para professores: turmas, avatares, pontos, vidas, sorteios, equipas, diário e apresentação numa segunda janela.
+Jogo de sala de aula para professores. Transforma a turma numa equipa de jogadores com avatares, pontos, níveis e vidas, e junta um diário da turma para registar aulas, presenças e trabalhos de casa.
 
-Aplicação estática, sem servidor de dados, contas ou serviços externos. O navegador executa módulos JavaScript nativos; não há framework nem dependências de produção. Os dados são guardados no navegador e exportados em backups JSON.
+**Aplicação publicada:** <https://luanabuscariolo.github.io/classroom-quest/>
 
-## Desenvolvimento local
+Funciona inteiramente no navegador: não há contas, servidor de dados nem serviços externos. Os dados ficam no navegador de quem usa e podem ser exportados em backups JSON.
 
-Requisito: Node.js 24 ou superior.
+## Funcionalidades
+
+- **Turmas:** até 30 alunos por turma, com avatar em pixel art; turmas podem ser arquivadas.
+- **Pontos e níveis:** pontos individuais, atividades frequentes (ex.: "TPC entregue") e histórico com anulação segura. A cada 20 pontos o aluno sobe de fase.
+- **Vidas da turma:** a turma tem 5 vidas partilhadas; perder todas mostra _game over_.
+- **Atenção, turma!:** contagem de 10 segundos para fazer silêncio; se a turma não cumprir, perde uma vida.
+- **Sorteio:** roleta com os alunos marcados como "no sorteio".
+- **Equipas:** sorteio de até 6 equipas, com pontuação própria.
+- **Diário da turma:** aulas numeradas, sumário, atividades, TPC com prazo, presenças e atrasos, controlo de entregas (com atribuição de pontos), notas privadas, histórico por dia e relatórios em texto para copiar ou descarregar.
+- **Apresentação:** uma segunda janela para o projetor mostra apenas o jogo; o diário e as notas privadas ficam no ecrã do professor.
+- **Backup e restauro:** exportação completa ou por turma, com verificação de integridade; importação como cópia ou em substituição.
+
+## Como usar
+
+1. Abra a aplicação, indique o seu nome, título e personagem e guarde.
+2. Crie uma turma e cole os nomes dos alunos, um por linha.
+3. Entre na turma para jogar; use **▣ Apresentar** para abrir a janela do projetor.
+4. Use **▤ Diário** para registar a aula.
+5. **Descarregue um backup com regularidade.** É a única forma de levar os dados para outro computador ou navegador e de os recuperar se o navegador for limpo.
+
+## Os seus dados
+
+- Tudo é guardado no `localStorage` do navegador, associado ao endereço do site e ao perfil do navegador. Mudar de computador, de navegador ou de endereço (ex.: de `localhost` para o GitHub Pages) **não** leva os dados: exporte um backup completo e importe-o no novo local.
+- Não existe autenticação nem cifragem. Quem usar o mesmo perfil do navegador pode ver e alterar as turmas. O perfil de professor é uma preferência, não uma conta.
+- Os backups completos e os relatórios de dia completo incluem notas privadas. Guarde-os em local seguro e **nunca** os coloque no repositório.
+- Use uma só janela de gestão (mais a janela de apresentação). Se outra janela alterar os dados, a gravação automática é suspensa e aparece um aviso.
+
+Mais detalhes em [segurança e privacidade](SECURITY.md).
+
+## Desenvolvimento
+
+Requisito: [Node.js](https://nodejs.org/) 24 ou superior. Não há framework nem dependências de produção; as dependências de desenvolvimento servem apenas para testes, lint e formatação.
 
 ```sh
-npm ci
-npm run dev
+npm ci        # instalar dependências de desenvolvimento
+npm run dev   # servidor local
 ```
 
-Abrir <http://127.0.0.1:4173/classroom-quest/>. O prefixo simula um site de projeto no GitHub Pages. O servidor escuta apenas no computador local e serve apenas os ficheiros da aplicação. A variável de ambiente `PORT` permite alterar a porta.
+Abra <http://127.0.0.1:4173/classroom-quest/>. O prefixo `/classroom-quest/` simula o endereço do GitHub Pages. Para mudar a porta, defina a variável de ambiente `PORT`.
 
-Use HTTP local, não um duplo clique em `index.html`: módulos ES precisam de um servidor. A entrada da aplicação é `index.html`.
+Não abra `index.html` com duplo clique: os módulos JavaScript precisam de ser servidos por HTTP.
 
-## Organização
+### Comandos
 
-| Local                                            | Responsabilidade                                                      |
-| ------------------------------------------------ | --------------------------------------------------------------------- |
-| `index.html`                                     | Estrutura da interface, sem CSS ou JavaScript embutido                |
-| `assets/css/`                                    | Estilos por área: base, feedback, jogo, gestão, diário e apresentação |
-| `assets/images/`                                 | Cinco imagens extraídas do HTML original, sem alterar os bytes        |
-| `src/app.js`                                     | Inicialização, estado da sessão, interface do jogo e coordenação      |
-| `src/diary.js`                                   | Aulas, presenças, TPC, notas, rascunhos e relatórios                  |
-| `src/model.js`                                   | Validação e normalização dos dados; compatibilidade de versões        |
-| `src/backup.js`                                  | Importação, exportação e verificação de integridade                   |
-| `src/storage.js`                                 | Gravação local e deteção de conflitos entre janelas                   |
-| `src/points.js`                                  | Condições para anular pontos em segurança                             |
-| `src/avatars.js`, `src/audio.js`                 | Personagens e sons sintetizados                                       |
-| `src/presentation.js`, `src/presentation-dom.js` | Janela pública e atualização do DOM                                   |
-| `src/utils.js`                                   | Datas, identificadores, cópias e validações elementares               |
-| `tests/`                                         | Testes de dados, persistência e fluxos integrados                     |
-| `tools/`                                         | Servidor local e preparação dos ficheiros públicos                    |
+| Comando          | O que faz                                             |
+| ---------------- | ----------------------------------------------------- |
+| `npm run dev`    | Servidor local em `127.0.0.1`                         |
+| `npm run format` | Formata HTML, CSS, JS e Markdown com Prettier         |
+| `npm run lint`   | ESLint                                                |
+| `npm test`       | Testes com o executor nativo do Node (`node --test`)  |
+| `npm run check`  | Formatação + lint + testes (o mesmo que a CI executa) |
+| `npm run build`  | Copia apenas os ficheiros públicos para `dist/`       |
 
-Leia [a arquitetura](docs/ARQUITETURA.md) antes de alterar fluxos com estado e [a revisão técnica](docs/REVISAO.md) para conhecer os limites atuais.
+Os testes usam apenas dados fictícios. Nunca acrescente backups reais como fixtures.
 
-## Qualidade
+### Organização
 
-```sh
-npm run format     # formatar HTML, CSS, JS e documentação
-npm run check      # formatação + ESLint + testes
-npm run build      # preparar apenas ficheiros públicos em dist/
-```
+| Local                                            | Responsabilidade                                                     |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| `index.html`                                     | Estrutura da interface (sem CSS nem JavaScript embutidos)            |
+| `assets/css/`                                    | Estilos por área: base, feedback, jogo, gestão, diário, apresentação |
+| `assets/images/`                                 | Cenário e folhas de sprites (WebP)                                   |
+| `src/app.js`                                     | Ponto de entrada: tabuleiro de jogo, overlays e ligação dos módulos  |
+| `src/diary.js`                                   | Aulas, presenças, TPC, notas, rascunhos e relatórios                 |
+| `src/hub.js`, `src/teacher.js`                   | Lista de turmas e perfil do professor                                |
+| `src/roster.js`, `src/teams.js`                  | Nomes/avatares dos alunos e equipas                                  |
+| `src/activities.js`, `src/raffle.js`             | Pontos por atividade e roleta de sorteio                             |
+| `src/attention.js`                               | Contagem "Atenção, turma!"                                           |
+| `src/backup-ui.js`                               | Ecrãs de backup, importação e avisos de gravação                     |
+| `src/persistence.js`, `src/storage.js`           | Dono do workspace; gravação local e deteção de conflitos             |
+| `src/model.js`                                   | Validação e normalização dos dados; compatibilidade de versões       |
+| `src/backup.js`                                  | Formato do backup e verificação de integridade                       |
+| `src/points.js`                                  | Condições para anular pontos em segurança                            |
+| `src/avatars.js`, `src/audio.js`                 | Personagens e sons sintetizados                                      |
+| `src/presentation.js`, `src/presentation-dom.js` | Janela de apresentação e atualização do seu DOM                      |
+| `src/dom.js`, `src/utils.js`                     | Utilitários de DOM, datas, identificadores e validações              |
+| `tests/`                                         | Testes de dados, persistência e fluxos integrados (com jsdom)        |
+| `tools/`                                         | Servidor local e preparação de `dist/`                               |
+| `docs/`                                          | Arquitetura e revisão técnica                                        |
 
-As versões das ferramentas ficam registadas em `package-lock.json`. A integração contínua executa as verificações em pushes e pull requests. Os testes usam dados fictícios. Nunca acrescente backups reais como fixtures.
+Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).
 
 ## Publicação no GitHub Pages
 
-1. Enviar estas alterações para o repositório após revisão.
-2. Em **Settings → Pages → Build and deployment → Source**, escolher **GitHub Actions**.
-3. Em **Actions → Publicar no GitHub Pages**, escolher **Run workflow** na branch aprovada.
-4. O workflow verifica o código, cria `dist/` e publica esse diretório. O endereço aparece no resultado do deployment.
+A publicação é manual; os pushes e pull requests apenas executam as verificações.
 
-A publicação é manual: o workflow de verificação não publica. Os caminhos relativos funcionam sob `/classroom-quest/`. `dist/` contém apenas HTML, módulos, estilos e imagens; não inclui dependências de desenvolvimento, testes ou backups.
+1. Em **Settings → Pages → Build and deployment → Source**, escolha **GitHub Actions** (apenas na primeira vez).
+2. Em **Actions → Publicar no GitHub Pages**, clique em **Run workflow** na branch pretendida.
+3. O workflow executa `npm run check`, cria `dist/` e publica-o. O endereço aparece no resultado do deployment.
 
-Referência: [configurar a publicação no GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
-
-## Dados e migração
-
-Na tela inicial, indique e guarde o seu nome e personagem antes de entrar numa turma. Essa identificação fica guardada no navegador e aparece no jogo, apresentação e novas aulas do diário. Para a alterar, volte à tela inicial; o jogo não tem troca de professor. Os registos de aulas anteriores mantêm o nome registado na altura.
-
-Os antigos perfis de demonstração deixam de preencher automaticamente o nome. Perfis importados e registos existentes são preservados nos backups.
-
-Antes de mudar do HTML antigo para localhost ou GitHub Pages, exporte um **backup completo** na aplicação antiga e importe-o no novo endereço. O armazenamento pertence à origem e ao perfil do navegador; os dados não acompanham automaticamente a mudança de endereço ou computador.
-
-São aceites saves de turma nas versões 1–6 e workspaces/backups nas versões 8–10. A chave `tic-quest.workspace.v8` foi mantida para compatibilidade na mesma origem. Importar como cópias preserva as turmas atuais; substituir exige a confirmação já existente na interface e inicia um backup preventivo.
-
-Os backups completos e relatórios de dia completo contêm notas privadas. Não os coloque no repositório. O `.gitignore` cobre os nomes de exportação habituais, mas não identifica todos os ficheiros pessoais renomeados.
-
-Não existe autenticação nem cifragem dos dados locais. Perfis de professor são preferências de utilização, não contas isoladas. Consulte [segurança e privacidade](SECURITY.md).
+`dist/` contém apenas HTML, módulos, estilos, imagens e a licença: nunca dependências, testes ou backups. Ver também a [documentação do GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
 ## Licença
 
-Este projeto utiliza uma [licença própria de uso pessoal e estudo não comercial](LICENSE).
+[Licença própria de uso pessoal e estudo não comercial](LICENSE). Não é software livre/open source.
 
-- Permitido: utilizar, estudar, modificar e partilhar gratuitamente para uso pessoal e estudo não comerciais, cumprindo a licença.
-- Proibido: vender, revender, cobrar acesso, oferecer como serviço pago ou incorporar o projeto em produtos e serviços comerciais, incluindo versões modificadas.
-- As cópias devem conservar a autoria e a licença; a distribuição de modificações deve incluir o respetivo código fonte sob as mesmas condições.
+- **Permitido:** usar, estudar, modificar e partilhar gratuitamente, para fins pessoais e de estudo não comerciais.
+- **Proibido:** vender, cobrar acesso, oferecer como serviço pago ou incorporar em produtos ou serviços comerciais, incluindo versões modificadas.
+- As cópias devem manter a autoria e a licença; modificações distribuídas devem incluir o código-fonte nas mesmas condições.
 
-É código disponibilizado para consulta e estudo com restrições de utilização; não é software livre/open source. Dependências e materiais de terceiros mantêm as suas próprias licenças. A origem/licença das imagens herdadas deve ser confirmada pelo autor antes da distribuição pública.
-
-A mudança não revoga permissões validamente concedidas a versões anteriormente distribuídas sob MIT. O texto é uma licença personalizada; uma revisão jurídica é recomendada antes de o utilizar como instrumento de proteção comercial.
+Dependências e materiais de terceiros mantêm as suas licenças. A origem e a licença das imagens ainda devem ser confirmadas antes de uma distribuição pública. Versões anteriormente distribuídas sob MIT mantêm essa licença. Recomenda-se revisão jurídica antes de usar este texto como proteção comercial.

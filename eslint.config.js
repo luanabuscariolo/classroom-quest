@@ -8,6 +8,11 @@ export default [
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: {
       "no-unused-vars": ["error", { args: "none", caughtErrors: "none" }],
+      "no-var": "error",
+      "prefer-const": "error",
+      "prefer-arrow-callback": "error",
+      "object-shorthand": "error",
+      "arrow-body-style": ["error", "as-needed"],
     },
   },
 ];

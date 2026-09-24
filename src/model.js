@@ -1,5 +1,5 @@
 import { uid, validDate, integer, textField, validDay } from "./utils.js";
-const validateLegacy = validate;
+/** Class save in the legacy format (versions 1–6), normalized to version 6. */
 export function validate(raw) {
   if (
     !raw ||
@@ -15,7 +15,7 @@ export function validate(raw) {
     raw.groups.length > 6
   )
     throw Error("Formato de save inválido.");
-  var students = raw.students.map(function (s) {
+  const students = raw.students.map((s) => {
     if (
       !s ||
       typeof s.name !== "string" ||
@@ -45,25 +45,21 @@ export function validate(raw) {
       avatar: null,
       avatarMode: "auto",
     });
-  var groups = raw.groups.map(function (g) {
+  const groups = raw.groups.map((g) => {
     if (!g || !Number.isSafeInteger(g.points))
       throw Error("Dados de equipa inválidos.");
-    var members;
+    let members;
     if (raw.version === 1) {
       if (!Array.isArray(g.memberIds)) throw Error("Membros inválidos.");
-      members = g.memberIds.map(function (id) {
-        return raw.students.findIndex(function (s) {
-          return s.id === id;
-        });
-      });
+      members = g.memberIds.map((id) =>
+        raw.students.findIndex((s) => s.id === id),
+      );
     } else members = g.members;
     if (
       !Array.isArray(members) ||
       members.length > 30 ||
       new Set(members).size !== members.length ||
-      members.some(function (i) {
-        return !Number.isInteger(i) || i < 0 || i >= 30;
-      })
+      members.some((i) => !Number.isInteger(i) || i < 0 || i >= 30)
     )
       throw Error("Membros inválidos.");
     return { points: g.points, members: members.slice() };
@@ -72,8 +68,8 @@ export function validate(raw) {
     version: 6,
     className: raw.className.slice(0, 50),
     lives: raw.lives,
-    students: students,
-    groups: groups,
+    students,
+    groups,
   };
 }
 
@@ -100,15 +96,15 @@ export function emptyWorkspace() {
 }
 
 export function validClass(raw) {
-  var c = validateLegacy(raw);
+  const c = validate(raw);
   c.id = typeof raw.id === "string" && raw.id.length <= 100 ? raw.id : uid();
   c.archived = raw.archived === true;
   c.history = [];
   if (raw.history !== undefined) {
     if (!Array.isArray(raw.history) || raw.history.length > 10000)
       throw Error("Histórico inválido ou demasiado extenso.");
-    var ids = new Set();
-    c.history = raw.history.map(function (e) {
+    const ids = new Set();
+    c.history = raw.history.map((e) => {
       if (
         !e ||
         typeof e.id !== "string" ||
@@ -124,8 +120,8 @@ export function validClass(raw) {
       )
         throw Error("Lançamento de atividade inválido.");
       ids.add(e.id);
-      var slots = new Set();
-      var recipients = e.recipients.map(function (r) {
+      const slots = new Set();
+      const recipients = e.recipients.map((r) => {
         if (
           !r ||
           !integer(r.slot, 0, 29) ||
@@ -148,24 +144,20 @@ export function validClass(raw) {
         title: e.title,
         date: e.date,
         points: e.points,
-        recipients: recipients,
+        recipients,
         undoneAt: e.undoneAt || null,
       };
     });
   }
   c.diary = validateDiary(raw.diary);
-  c.diary.lessons.forEach(function (l) {
-    l.attendance.forEach(function (r) {
+  c.diary.lessons.forEach((l) => {
+    l.attendance.forEach((r) => {
       if (
         r.awardId &&
-        !c.history.some(function (h) {
-          return (
-            h.id === r.awardId &&
-            h.recipients.some(function (p) {
-              return p.slot === r.slot;
-            })
-          );
-        })
+        !c.history.some(
+          (h) =>
+            h.id === r.awardId && h.recipients.some((p) => p.slot === r.slot),
+        )
       )
         throw Error("Ligação de pontos do TPC inválida.");
     });
@@ -190,15 +182,15 @@ export function validateWorkspace(raw) {
     !integer(raw.revision, 0, Number.MAX_SAFE_INTEGER)
   )
     throw Error("Estrutura do backup inválida.");
-  var w = emptyWorkspace(),
+  const w = emptyWorkspace(),
     ids = new Set();
-  w.classes = raw.classes.map(function (c) {
-    var item = validClass(c);
+  w.classes = raw.classes.map((c) => {
+    const item = validClass(c);
     if (ids.has(item.id)) throw Error("Identificadores de turma repetidos.");
     ids.add(item.id);
     return item;
   });
-  w.presets = raw.presets.map(function (p) {
+  w.presets = raw.presets.map((p) => {
     if (
       !p ||
       typeof p.name !== "string" ||
@@ -238,8 +230,8 @@ export function validateTeachers(raw, w) {
   }
   if (!Array.isArray(raw.teachers) || raw.teachers.length > 100)
     throw Error("Perfis de professores inválidos.");
-  var ids = new Set();
-  w.teachers = raw.teachers.map(function (t) {
+  const ids = new Set();
+  w.teachers = raw.teachers.map((t) => {
     if (
       !t ||
       typeof t.id !== "string" ||
@@ -278,9 +270,9 @@ export function validateDiary(raw) {
     raw.notes.length > 10000
   )
     throw Error("Diário inválido.");
-  var ids = new Set(),
+  const ids = new Set(),
     out = emptyDiary();
-  out.lessons = raw.lessons.map(function (l) {
+  out.lessons = raw.lessons.map((l) => {
     if (
       !l ||
       !textField(l.id, 100) ||
@@ -298,8 +290,8 @@ export function validateDiary(raw) {
     )
       throw Error("Registo de aula inválido.");
     ids.add(l.id);
-    var slots = new Set(),
-      a = l.attendance.map(function (r) {
+    const slots = new Set(),
+      a = l.attendance.map((r) => {
         if (
           !r ||
           !integer(r.slot, 0, 29) ||
@@ -336,7 +328,7 @@ export function validateDiary(raw) {
     };
   });
   ids.clear();
-  out.notes = raw.notes.map(function (n) {
+  out.notes = raw.notes.map((n) => {
     if (
       !n ||
       !textField(n.id, 100) ||

@@ -9,7 +9,7 @@ const types = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
-  ".png": "image/png",
+  ".webp": "image/webp",
 };
 const server = http.createServer(async (request, response) => {
   try {
@@ -19,7 +19,7 @@ const server = http.createServer(async (request, response) => {
     ).replace(/^\/classroom-quest(?=\/)/, "");
     if (name.endsWith("/")) name += "index.html";
     if (
-      !/^\/(index\.html|LICENSE|src\/[\w-]+\.js|assets\/(css\/[\w-]+\.css|images\/[\w-]+\.png))$/.test(
+      !/^\/(index\.html|LICENSE|src\/[\w-]+\.js|assets\/(css\/[\w-]+\.css|images\/[\w-]+\.webp))$/.test(
         name,
       )
     ) {

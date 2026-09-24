@@ -1,6 +1,7 @@
 import { uid, copy, dayISO, validDay, dateLabel, integer } from "./utils.js";
 import { emptyDiary } from "./model.js";
 import { canUndo } from "./points.js";
+import { downloadText } from "./dom.js";
 /** Diary state is private; app getters follow class switches and restored backups. */
 export function createDiary(app) {
   const {
@@ -14,34 +15,45 @@ export function createDiary(app) {
     closeOverlay,
     masterName,
   } = app;
-  var diaryClassId = null,
+  let diaryClassId = null,
     diaryLessonId = null,
     diaryTab = "lesson",
-    calendarView = new Date();
+    calendarView = new Date(),
+    reportDay = null;
+  // Edits change this draft of the open class's diary until saveDayEdits() commits it.
+  let dayDraft = null,
+    dayDraftClass = null,
+    dayPending = false,
+    dayMode = "home";
+  const attendanceLabels = {
+      unmarked: "Por marcar",
+      present: "Presente",
+      absent: "Falta",
+      late: "Atraso",
+    },
+    deliveryLabels = {
+      pending: "Por verificar",
+      delivered: "Entregue",
+      missing: "Não entregue",
+      excused: "Dispensado",
+    };
 
   function diaryClass() {
-    return app.workspace.classes.find(function (c) {
-      return c.id === diaryClassId;
-    });
+    return app.workspace.classes.find((c) => c.id === diaryClassId);
   }
   function committedDiaryData(c) {
     if (!c.diary) c.diary = emptyDiary();
     return c.diary;
   }
   function lesson() {
-    var c = diaryClass();
-    return (
-      c &&
-      diaryData(c).lessons.find(function (l) {
-        return l.id === diaryLessonId;
-      })
-    );
+    const c = diaryClass();
+    return c && diaryData(c).lessons.find((l) => l.id === diaryLessonId);
   }
 
   function renderCalendar() {
-    var c = diaryClass();
+    const c = diaryClass();
     if (!c) return;
-    var year = calendarView.getFullYear(),
+    const year = calendarView.getFullYear(),
       month = calendarView.getMonth(),
       root = $("calendarGrid");
     root.textContent = "";
@@ -49,14 +61,12 @@ export function createDiary(app) {
       month: "long",
       year: "numeric",
     });
-    var offset = (new Date(year, month, 1).getDay() + 6) % 7;
-    for (var n = 0; n < offset; n++) root.appendChild(element("span"));
-    var dates = diaryData(c).lessons.map(function (l) {
-      return l.date;
-    });
-    for (var i = 1; i <= new Date(year, month + 1, 0).getDate(); i++) {
-      var date = dayISO(new Date(year, month, i));
-      var b = button(
+    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+    for (let n = 0; n < offset; n++) root.appendChild(element("span"));
+    const dates = diaryData(c).lessons.map((l) => l.date);
+    for (let i = 1; i <= new Date(year, month + 1, 0).getDate(); i++) {
+      const date = dayISO(new Date(year, month, i));
+      const b = button(
         String(i),
         function () {
           chooseDay(this.dataset.date);
@@ -107,33 +117,25 @@ export function createDiary(app) {
     renderCalendar();
   };
   function loadDay() {
-    var c = diaryClass();
+    const c = diaryClass();
     if (!c) return;
-    var lessons = diaryData(c)
-        .lessons.filter(function (l) {
-          return l.date === $("lessonDate").value;
-        })
-        .sort(function (a, b) {
-          return a.number - b.number;
-        }),
+    const lessons = diaryData(c)
+        .lessons.filter((l) => l.date === $("lessonDate").value)
+        .sort((a, b) => a.number - b.number),
       root = $("lessonSelect");
     root.textContent = "";
     if (!lessons.length) {
-      var o = element("option", "", "Sem aula registada");
+      const o = element("option", "", "Sem aula registada");
       o.value = "";
       root.appendChild(o);
       diaryLessonId = null;
     } else {
-      lessons.forEach(function (l) {
-        var o = element("option", "", "Aula " + l.number + " · " + l.teacher);
+      lessons.forEach((l) => {
+        const o = element("option", "", "Aula " + l.number + " · " + l.teacher);
         o.value = l.id;
         root.appendChild(o);
       });
-      if (
-        !lessons.some(function (l) {
-          return l.id === diaryLessonId;
-        })
-      )
+      if (!lessons.some((l) => l.id === diaryLessonId))
         diaryLessonId = lessons[0].id;
       root.value = diaryLessonId;
     }
@@ -144,30 +146,25 @@ export function createDiary(app) {
     renderLesson();
   };
   $("newDiaryLesson").onclick = function () {
-    var c = diaryClass(),
+    const c = diaryClass(),
       date = $("lessonDate").value;
     if (!c || !validDay(date)) return;
-    var d = diaryData(c);
+    const d = diaryData(c);
     if (d.lessons.length >= 2000) {
       alert("Limite de 2000 aulas por turma.");
       return;
     }
     if (
-      d.lessons.some(function (l) {
-        return l.date === date;
-      }) &&
+      d.lessons.some((l) => l.date === date) &&
       !confirm("Já existe uma aula nesta data. Criar outra aula?")
     )
       return;
-    var l = {
+    const l = {
       id: uid(),
-      date: date,
+      date,
       number: Math.min(
         10000,
-        1 +
-          d.lessons.reduce(function (n, l) {
-            return Math.max(n, l.number);
-          }, 0),
+        1 + d.lessons.reduce((n, l) => Math.max(n, l.number), 0),
       ),
       teacher: masterName(),
       summary: "",
@@ -176,7 +173,7 @@ export function createDiary(app) {
       due: "",
       attendance: [],
     };
-    c.students.forEach(function (s, i) {
+    c.students.forEach((s, i) => {
       if (s.name)
         l.attendance.push({
           slot: i,
@@ -197,7 +194,7 @@ export function createDiary(app) {
   };
   function switchDiaryTab(tab) {
     diaryTab = tab;
-    var l = lesson();
+    const l = lesson();
     $("lessonPane").hidden = tab !== "lesson" || !l;
     $("homeworkPane").hidden = tab !== "homework" || !l;
     $("notesPane").hidden = tab !== "notes";
@@ -206,7 +203,7 @@ export function createDiary(app) {
       ["tabLesson", "lesson"],
       ["tabHomework", "homework"],
       ["tabNotes", "notes"],
-    ].forEach(function (pair) {
+    ].forEach((pair) => {
       $(pair[0]).setAttribute("aria-pressed", String(tab === pair[1]));
     });
     if (tab === "notes") renderNotes();
@@ -221,7 +218,7 @@ export function createDiary(app) {
     switchDiaryTab("notes");
   };
   function renderLesson() {
-    var l = lesson();
+    const l = lesson();
     $("homeworkFeedback").textContent = "";
     if (l) {
       $("lessonNumber").value = l.number;
@@ -239,9 +236,9 @@ export function createDiary(app) {
     ["lessonSummary", "summary"],
     ["lessonActivities", "activities"],
     ["lessonHomework", "homework"],
-  ].forEach(function (pair) {
+  ].forEach((pair) => {
     $(pair[0]).oninput = function () {
-      var l = lesson();
+      const l = lesson();
       if (!l) return;
       l[pair[1]] = this.value;
       saveDiary();
@@ -249,7 +246,7 @@ export function createDiary(app) {
     };
   });
   $("lessonNumber").onchange = function () {
-    var l = lesson(),
+    const l = lesson(),
       v = Number(this.value);
     if (!l) return;
     if (!integer(v, 1, 10000)) {
@@ -261,7 +258,7 @@ export function createDiary(app) {
     loadDay();
   };
   $("homeworkDue").onchange = function () {
-    var l = lesson();
+    const l = lesson();
     if (!l) return;
     if (this.value && !validDay(this.value)) {
       this.value = l.due;
@@ -271,9 +268,9 @@ export function createDiary(app) {
     saveDiary();
   };
   function selectOptions(options, value, fn) {
-    var select = element("select", "field");
-    options.forEach(function (pair) {
-      var o = element("option", "", pair[1]);
+    const select = element("select", "field");
+    options.forEach((pair) => {
+      const o = element("option", "", pair[1]);
       o.value = pair[0];
       select.appendChild(o);
     });
@@ -281,39 +278,24 @@ export function createDiary(app) {
     select.onchange = fn;
     return select;
   }
-  var attendanceLabels = {
-      unmarked: "Por marcar",
-      present: "Presente",
-      absent: "Falta",
-      late: "Atraso",
-    },
-    deliveryLabels = {
-      pending: "Por verificar",
-      delivered: "Entregue",
-      missing: "Não entregue",
-      excused: "Dispensado",
-    };
   function attendanceCounts() {
-    var l = lesson();
+    const l = lesson();
     if (!l) return;
     $("attendanceCount").textContent = Object.keys(attendanceLabels)
-      .map(function (k) {
-        return (
+      .map(
+        (k) =>
           attendanceLabels[k] +
           ": " +
-          l.attendance.filter(function (r) {
-            return r.status === k;
-          }).length
-        );
-      })
+          l.attendance.filter((r) => r.status === k).length,
+      )
       .join(" · ");
   }
   function renderAttendance() {
-    var l = lesson(),
+    const l = lesson(),
       root = $("attendanceList");
     root.textContent = "";
-    l.attendance.forEach(function (r) {
-      var row = element("div", "attendance-row"),
+    l.attendance.forEach((r) => {
+      const row = element("div", "attendance-row"),
         select = selectOptions(
           Object.entries(attendanceLabels),
           r.status,
@@ -325,7 +307,7 @@ export function createDiary(app) {
         );
       select.dataset.attendance = r.slot;
       select.setAttribute("aria-label", "Presença de " + r.name);
-      var note = element("input", "field");
+      const note = element("input", "field");
       note.maxLength = 1000;
       note.value = r.note;
       note.placeholder = "Observação privada";
@@ -340,17 +322,17 @@ export function createDiary(app) {
     attendanceCounts();
   }
   $("allPresent").onclick = function () {
-    var l = lesson();
+    const l = lesson();
     if (!l) return;
-    var marked = l.attendance.some(function (r) {
-      return r.status === "absent" || r.status === "late";
-    });
+    const marked = l.attendance.some(
+      (r) => r.status === "absent" || r.status === "late",
+    );
     if (
       marked &&
       !confirm("Substituir também as faltas e os atrasos já marcados?")
     )
       return;
-    l.attendance.forEach(function (r) {
+    l.attendance.forEach((r) => {
       r.status = "present";
     });
     saveDiary();
@@ -358,27 +340,23 @@ export function createDiary(app) {
   };
   function wasRewarded(c, r) {
     return (
-      !!r.awardId &&
-      c.history.some(function (h) {
-        return h.id === r.awardId && !h.undoneAt;
-      })
+      !!r.awardId && c.history.some((h) => h.id === r.awardId && !h.undoneAt)
     );
   }
   function rewardable() {
-    var c = diaryClass(),
+    const c = diaryClass(),
       l = lesson();
     return c && l
-      ? l.attendance.filter(function (r) {
-          return (
+      ? l.attendance.filter(
+          (r) =>
             r.delivery === "delivered" &&
             !wasRewarded(c, r) &&
-            c.students[r.slot].name === r.name
-          );
-        })
+            c.students[r.slot].name === r.name,
+        )
       : [];
   }
   function updateRewardButton() {
-    var l = lesson(),
+    const l = lesson(),
       n = rewardable().length,
       points = Number($("homeworkPoints").value);
     $("rewardHomework").textContent =
@@ -392,12 +370,12 @@ export function createDiary(app) {
       !l || !l.homework.trim() || !n || !integer(points, 1, 1000);
   }
   function renderHomework() {
-    var c = diaryClass(),
+    const c = diaryClass(),
       l = lesson(),
       root = $("homeworkList");
     root.textContent = "";
-    l.attendance.forEach(function (r) {
-      var row = element("div", "attendance-row"),
+    l.attendance.forEach((r) => {
+      const row = element("div", "attendance-row"),
         select = selectOptions(
           Object.entries(deliveryLabels),
           r.delivery,
@@ -409,7 +387,7 @@ export function createDiary(app) {
         );
       select.dataset.delivery = r.slot;
       select.setAttribute("aria-label", "Entrega de " + r.name);
-      var info = wasRewarded(c, r)
+      const info = wasRewarded(c, r)
         ? "✓ Pontos atribuídos"
         : c.students[r.slot].name !== r.name
           ? "Nome alterado na turma; pontos bloqueados"
@@ -425,7 +403,7 @@ export function createDiary(app) {
   }
   $("homeworkPoints").oninput = updateRewardButton;
   function awardDeliveredHomework() {
-    var c = diaryClass(),
+    const c = diaryClass(),
       l = lesson(),
       rows = rewardable(),
       points = Number($("homeworkPoints").value);
@@ -433,25 +411,23 @@ export function createDiary(app) {
       return;
     if (
       c.history.length >= 10000 ||
-      rows.some(function (r) {
-        return !Number.isSafeInteger(c.students[r.slot].points + points);
-      })
+      rows.some(
+        (r) => !Number.isSafeInteger(c.students[r.slot].points + points),
+      )
     ) {
       alert("Não é possível adicionar este lançamento.");
       return;
     }
-    var event = {
+    const event = {
       id: uid(),
       title: ("TPC · " + dateLabel(l.date) + " · " + l.homework).slice(0, 100),
       date: new Date().toISOString(),
-      points: points,
-      recipients: rows.map(function (r) {
-        return { slot: r.slot, name: r.name };
-      }),
+      points,
+      recipients: rows.map((r) => ({ slot: r.slot, name: r.name })),
       undoneAt: null,
     };
     c.history.push(event);
-    rows.forEach(function (r) {
+    rows.forEach((r) => {
       c.students[r.slot].points += points;
       r.awardId = event.id;
     });
@@ -465,27 +441,23 @@ export function createDiary(app) {
     playSound("point");
   }
   function fillNoteTargets() {
-    var c = diaryClass(),
+    const c = diaryClass(),
       root = $("noteTarget");
     root.textContent = "";
-    var o = element("option", "", "Turma · notas gerais");
+    const o = element("option", "", "Turma · notas gerais");
     o.value = "class";
     root.appendChild(o);
-    c.students.forEach(function (s, i) {
+    c.students.forEach((s, i) => {
       if (s.name) {
-        var o = element("option", "", s.name);
+        const o = element("option", "", s.name);
         o.value = i;
         root.appendChild(o);
       }
     });
-    var previousSlots = new Set(
-      c.students.map(function (s, i) {
-        return s.name ? i : -1;
-      }),
-    );
-    diaryData(c).notes.forEach(function (n) {
+    const previousSlots = new Set(c.students.map((s, i) => (s.name ? i : -1)));
+    diaryData(c).notes.forEach((n) => {
       if (n.slot !== null && !previousSlots.has(n.slot)) {
-        var o = element("option", "", n.name + " · registo anterior");
+        const o = element("option", "", n.name + " · registo anterior");
         o.value = n.slot;
         root.appendChild(o);
         previousSlots.add(n.slot);
@@ -495,22 +467,18 @@ export function createDiary(app) {
   }
   $("noteTarget").onchange = renderNotes;
   function renderNotes() {
-    var c = diaryClass();
+    const c = diaryClass();
     if (!c) return;
-    var target = $("noteTarget").value,
+    const target = $("noteTarget").value,
       slot = target === "class" ? null : Number(target),
       root = $("notesList");
     root.textContent = "";
-    var notes = diaryData(c)
-      .notes.filter(function (n) {
-        return n.slot === slot;
-      })
+    const notes = diaryData(c)
+      .notes.filter((n) => n.slot === slot)
       .slice()
-      .sort(function (a, b) {
-        return b.date.localeCompare(a.date);
-      });
-    notes.forEach(function (n) {
-      var box = element("article", "private-note");
+      .sort((a, b) => b.date.localeCompare(a.date));
+    notes.forEach((n) => {
+      const box = element("article", "private-note");
       box.appendChild(
         element(
           "small",
@@ -518,7 +486,7 @@ export function createDiary(app) {
           dateLabel(n.date) + " · " + (n.slot === null ? "Turma" : n.name),
         ),
       );
-      var text = element("textarea", "field");
+      const text = element("textarea", "field");
       text.rows = 3;
       text.maxLength = 6000;
       text.value = n.text;
@@ -531,11 +499,11 @@ export function createDiary(app) {
       box.appendChild(
         button(
           "Eliminar nota",
-          function () {
+          () => {
             if (!confirm("Eliminar esta anotação?")) return;
-            diaryData(c).notes = diaryData(c).notes.filter(function (x) {
-              return x.id !== n.id;
-            });
+            diaryData(c).notes = diaryData(c).notes.filter(
+              (x) => x.id !== n.id,
+            );
             saveDiary();
             renderNotes();
           },
@@ -549,7 +517,7 @@ export function createDiary(app) {
   }
   $("noteForm").onsubmit = function (e) {
     e.preventDefault();
-    var c = diaryClass(),
+    const c = diaryClass(),
       text = $("noteText").value.trim(),
       date = $("noteDate").value;
     if (!c || !text || !validDay(date)) return;
@@ -557,13 +525,13 @@ export function createDiary(app) {
       alert("Limite de notas atingido.");
       return;
     }
-    var target = $("noteTarget").value,
+    const target = $("noteTarget").value,
       slot = target === "class" ? null : Number(target);
     diaryData(c).notes.push({
       id: uid(),
-      date: date,
+      date,
       text: text.slice(0, 6000),
-      slot: slot,
+      slot,
       name: slot === null ? "" : c.students[slot].name,
     });
     $("noteText").value = "";
@@ -581,27 +549,27 @@ export function createDiary(app) {
       $("copyText").select();
     }
     if (navigator.clipboard && navigator.clipboard.writeText)
-      navigator.clipboard.writeText(text).then(function () {
+      navigator.clipboard.writeText(text).then(() => {
         $("diaryFeedback").textContent = "✓ Texto copiado.";
       }, fallback);
     else fallback();
   }
   $("copySummary").onclick = function () {
-    var l = lesson();
+    const l = lesson();
     if (l) copyForSchool(l.summary);
   };
   $("copyHomework").onclick = function () {
-    var l = lesson();
+    const l = lesson();
     if (l)
       copyForSchool(
         l.homework + (l.due ? "\nEntrega: " + dateLabel(l.due) : ""),
       );
   };
   function lessonReport(privateNotes) {
-    var c = diaryClass(),
+    const c = diaryClass(),
       l = lesson();
     if (!l) return "";
-    var lines = [
+    const lines = [
       "TIC QUEST · REGISTO DA AULA",
       "Turma: " + c.className,
       "Data: " + dateLabel(l.date),
@@ -620,7 +588,7 @@ export function createDiary(app) {
       "",
       "PRESENÇAS E ENTREGAS",
     ];
-    l.attendance.forEach(function (r) {
+    l.attendance.forEach((r) => {
       lines.push(
         r.name +
           " · " +
@@ -633,36 +601,21 @@ export function createDiary(app) {
     if (privateNotes) {
       lines.push("", "NOTAS PRIVADAS DA DATA");
       diaryData(c)
-        .notes.filter(function (n) {
-          return n.date === l.date;
-        })
-        .forEach(function (n) {
+        .notes.filter((n) => n.date === l.date)
+        .forEach((n) => {
           lines.push((n.slot === null ? "Turma" : n.name) + ": " + n.text);
         });
     }
     return lines.join("\n");
   }
   $("exportLesson").onclick = function () {
-    var l = lesson();
+    const l = lesson();
     if (!l) return;
-    var text = lessonReport($("exportPrivate").checked),
-      blob = new Blob([text], { type: "text/plain;charset=utf-8" }),
-      url = URL.createObjectURL(blob),
-      a = element("a");
-    a.href = url;
-    a.download = "TIC_Aula_" + l.date + "_" + l.number + ".txt";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () {
-      URL.revokeObjectURL(url);
-    }, 30000);
+    downloadText(
+      lessonReport($("exportPrivate").checked),
+      "TIC_Aula_" + l.date + "_" + l.number + ".txt",
+    );
   };
-  // Presentation receives only the visible game DOM, never the workspace or diary.
-  var dayDraft = null,
-    dayDraftClass = null,
-    dayPending = false,
-    dayMode = "home";
   function diaryData(c) {
     return dayDraft && c.id === dayDraftClass
       ? dayDraft
@@ -674,14 +627,14 @@ export function createDiary(app) {
     $("saveDiaryDay").disabled = false;
   }
   function prepareDayDraft() {
-    var c = diaryClass();
+    const c = diaryClass();
     dayDraft = c ? copy(committedDiaryData(c)) : null;
     dayDraftClass = c ? c.id : null;
     dayPending = false;
     $("saveDiaryDay").disabled = true;
   }
   function saveDayEdits() {
-    var c = diaryClass();
+    const c = diaryClass();
     if (!c) return;
     if ($("noteText").value.trim() && dayMode === "edit")
       $("noteForm").dispatchEvent(
@@ -704,15 +657,15 @@ export function createDiary(app) {
     return true;
   }
   function dayDates(c) {
-    var d = diaryData(c),
+    const d = diaryData(c),
       set = new Set();
-    d.lessons.forEach(function (l) {
+    d.lessons.forEach((l) => {
       set.add(l.date);
     });
-    d.notes.forEach(function (n) {
+    d.notes.forEach((n) => {
       set.add(n.date);
     });
-    c.history.forEach(function (h) {
+    c.history.forEach((h) => {
       set.add(dayISO(new Date(h.date)));
     });
     return Array.from(set).sort().reverse();
@@ -730,10 +683,10 @@ export function createDiary(app) {
 
   function openDiary() {
     if (!app.requireTeacher()) return;
-    var options = $("diaryClass");
+    const options = $("diaryClass");
     options.textContent = "";
-    app.workspace.classes.forEach(function (c) {
-      var o = element(
+    app.workspace.classes.forEach((c) => {
+      const o = element(
         "option",
         "",
         c.className + (c.archived ? " · arquivada" : ""),
@@ -741,9 +694,9 @@ export function createDiary(app) {
       o.value = c.id;
       options.appendChild(o);
     });
-    diaryClassId = app.workspace.classes.some(function (c) {
-      return c.id === app.workspace.activeClassId;
-    })
+    diaryClassId = app.workspace.classes.some(
+      (c) => c.id === app.workspace.activeClassId,
+    )
       ? app.workspace.activeClassId
       : app.workspace.classes[0]?.id;
     options.value = diaryClassId || "";
@@ -773,7 +726,7 @@ export function createDiary(app) {
   $("hubDiary").onclick = openDiary;
   $("gameDiary").onclick = openDiary;
   $("diaryClass").onchange = function () {
-    var next = this.value;
+    const next = this.value;
     if (!leaveDraft()) {
       this.value = diaryClassId;
       return;
@@ -799,7 +752,7 @@ export function createDiary(app) {
     startDailyEdit(dayISO(new Date()));
   };
   $("annotateDate").onclick = function () {
-    var date = $("dailyDate").value;
+    const date = $("dailyDate").value;
     if (validDay(date)) startDailyEdit(date);
   };
   $("dailyDate").value = dayISO(new Date());
@@ -824,31 +777,22 @@ export function createDiary(app) {
     saveDayEdits();
   };
   function renderDailyHistory() {
-    var c = diaryClass(),
+    const c = diaryClass(),
       root = $("dailyHistoryList");
     root.textContent = "";
     if (!c) return;
-    var dates = dayDates(c),
-      filter = $("historyDateFilter").value;
-    if (filter)
-      dates = dates.filter(function (d) {
-        return d === filter;
-      });
+    const filter = $("historyDateFilter").value;
+    let dates = dayDates(c);
+    if (filter) dates = dates.filter((d) => d === filter);
     if (!dates.length) {
       root.appendChild(element("p", "", "Sem registos nesta data."));
       return;
     }
-    dates.forEach(function (date) {
-      var d = diaryData(c),
-        lessons = d.lessons.filter(function (l) {
-          return l.date === date;
-        }),
-        notes = d.notes.filter(function (n) {
-          return n.date === date;
-        }),
-        events = c.history.filter(function (h) {
-          return dayISO(new Date(h.date)) === date;
-        }),
+    dates.forEach((date) => {
+      const d = diaryData(c),
+        lessons = d.lessons.filter((l) => l.date === date),
+        notes = d.notes.filter((n) => n.date === date),
+        events = c.history.filter((h) => dayISO(new Date(h.date)) === date),
         card = element("article", "daily-card");
       card.append(
         element("h3", "", dateLabel(date)),
@@ -866,7 +810,7 @@ export function createDiary(app) {
       card.appendChild(
         button(
           "Ver dia completo",
-          function () {
+          () => {
             renderWholeDay(date);
           },
           "mint",
@@ -875,7 +819,7 @@ export function createDiary(app) {
       card.appendChild(
         button(
           "Editar anotações",
-          function () {
+          () => {
             startDailyEdit(date);
           },
           "",
@@ -890,16 +834,12 @@ export function createDiary(app) {
     renderDailyHistory();
   };
   function dailyPlainText(c, date) {
-    var d = diaryData(c),
+    const d = diaryData(c),
       lines = ["REGISTO DIÁRIO · " + c.className, dateLabel(date), ""];
     d.lessons
-      .filter(function (l) {
-        return l.date === date;
-      })
-      .sort(function (a, b) {
-        return a.number - b.number;
-      })
-      .forEach(function (l) {
+      .filter((l) => l.date === date)
+      .sort((a, b) => a.number - b.number)
+      .forEach((l) => {
         lines.push(
           "AULA " + l.number + " · " + l.teacher,
           "SUMÁRIO",
@@ -908,7 +848,7 @@ export function createDiary(app) {
           l.activities || "—",
           "PRESENÇAS",
         );
-        l.attendance.forEach(function (r) {
+        l.attendance.forEach((r) => {
           lines.push(
             r.name +
               ": " +
@@ -922,59 +862,37 @@ export function createDiary(app) {
           "Prazo: " + (l.due ? dateLabel(l.due) : "—"),
         );
         if (l.homework)
-          l.attendance.forEach(function (r) {
+          l.attendance.forEach((r) => {
             lines.push(r.name + ": " + deliveryLabels[r.delivery]);
           });
         lines.push("");
       });
     lines.push("NOTAS GERAIS");
-    var general = d.notes.filter(function (n) {
-      return n.date === date && n.slot === null;
-    });
-    lines.push(
-      general
-        .map(function (n) {
-          return n.text;
-        })
-        .join("\n") || "—",
-    );
+    const general = d.notes.filter((n) => n.date === date && n.slot === null);
+    lines.push(general.map((n) => n.text).join("\n") || "—");
     lines.push("", "NOTAS POR ALUNO");
-    var individual = d.notes.filter(function (n) {
-      return n.date === date && n.slot !== null;
-    });
-    lines.push(
-      individual
-        .map(function (n) {
-          return n.name + ": " + n.text;
-        })
-        .join("\n") || "—",
+    const individual = d.notes.filter(
+      (n) => n.date === date && n.slot !== null,
     );
+    lines.push(individual.map((n) => n.name + ": " + n.text).join("\n") || "—");
     lines.push("", "PONTOS / ATIVIDADES");
-    var events = c.history.filter(function (h) {
-      return dayISO(new Date(h.date)) === date;
-    });
+    const events = c.history.filter((h) => dayISO(new Date(h.date)) === date);
     lines.push(
       events
-        .map(function (h) {
-          return (
+        .map(
+          (h) =>
             (h.undoneAt ? "[ANULADO] " : "") +
             h.title +
             " · " +
             (h.points > 0 ? "+" : "") +
             h.points +
             " · " +
-            h.recipients
-              .map(function (r) {
-                return r.name;
-              })
-              .join(", ")
-          );
-        })
+            h.recipients.map((r) => r.name).join(", "),
+        )
         .join("\n") || "—",
     );
     return lines.join("\n");
   }
-  var reportDay = null;
 
   $("editReportDay").onclick = function () {
     startDailyEdit(reportDay);
@@ -986,20 +904,12 @@ export function createDiary(app) {
     copyForSchool(dailyPlainText(diaryClass(), reportDay));
   };
   $("exportWholeDay").onclick = function () {
-    var text = dailyPlainText(diaryClass(), reportDay),
-      a = element("a"),
-      url = URL.createObjectURL(
-        new Blob([text], { type: "text/plain;charset=utf-8" }),
-      );
-    a.href = url;
-    a.download = "TIC_Dia_" + reportDay + ".txt";
-    a.click();
-    setTimeout(function () {
-      URL.revokeObjectURL(url);
-    }, 30000);
+    downloadText(
+      dailyPlainText(diaryClass(), reportDay),
+      "TIC_Dia_" + reportDay + ".txt",
+    );
   };
   // The points tool stays quick; its history routes to the same daily record.
-  $("historyTab").textContent = "Histórico por dia";
   $("historyTab").onclick = function () {
     closeOverlay("activitiesOverlay");
     openDiary();
@@ -1014,15 +924,13 @@ export function createDiary(app) {
     $("dailyReportText").textContent = dailyPlainText(diaryClass(), date);
     $("diaryOverlay").querySelector(".diary-modal").scrollTop = 0;
 
-    var c = diaryClass(),
+    const c = diaryClass(),
       root = $("dailyPointEvents");
     root.textContent = "";
     c.history
-      .filter(function (h) {
-        return dayISO(new Date(h.date)) === date && !h.undoneAt;
-      })
-      .forEach(function (h) {
-        var line = element("div", "daily-card");
+      .filter((h) => dayISO(new Date(h.date)) === date && !h.undoneAt)
+      .forEach((h) => {
+        const line = element("div", "daily-card");
         line.appendChild(
           element(
             "strong",
@@ -1031,20 +939,12 @@ export function createDiary(app) {
           ),
         );
         line.appendChild(
-          element(
-            "p",
-            "",
-            h.recipients
-              .map(function (r) {
-                return r.name;
-              })
-              .join(", "),
-          ),
+          element("p", "", h.recipients.map((r) => r.name).join(", ")),
         );
         line.appendChild(
           button(
             "Desfazer pontos",
-            function () {
+            () => {
               if (!confirm("Desfazer este lançamento de pontos?")) return;
               if (!canUndo(c, h)) {
                 alert(
@@ -1052,7 +952,7 @@ export function createDiary(app) {
                 );
                 return;
               }
-              h.recipients.forEach(function (r) {
+              h.recipients.forEach((r) => {
                 c.students[r.slot].points -= h.points;
               });
               h.undoneAt = new Date().toISOString();
@@ -1084,7 +984,7 @@ export function createDiary(app) {
   }
   $("activitiesTitle").textContent = "★ ATRIBUIR PONTOS";
 
-  window.addEventListener("beforeunload", function (e) {
+  window.addEventListener("beforeunload", (e) => {
     if (dayPending) {
       e.preventDefault();
       e.returnValue = "";

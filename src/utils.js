@@ -43,3 +43,12 @@ export function dateLabel(s) {
 export function textField(x, max) {
   return typeof x === "string" && x.length <= max;
 }
+
+export function when(date) {
+  return date ? new Date(date).toLocaleString("pt-PT") : "Nunca";
+}
+
+/** Timestamp that is safe in file names. */
+export function stamp() {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
