@@ -1,5 +1,7 @@
 # Arquitetura e manutenção
 
+Resumo técnico das regras do código. Para uma explicação completa, com diagramas, tabela de versões e receitas, veja o [guia do projeto](GUIA.md).
+
 ## Arranque e dependências
 
 `index.html` carrega `src/app.js` com `type="module"`. O navegador resolve os imports antes de inicializar a interface. Não existem variáveis de aplicação publicadas em `window` nem imports circulares.

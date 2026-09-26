@@ -86,9 +86,9 @@ Os testes usam apenas dados fictícios. Nunca acrescente backups reais como fixt
 | `src/dom.js`, `src/utils.js`                     | Utilitários de DOM, datas, identificadores e validações                   |
 | `tests/`                                         | Testes de dados, persistência e fluxos integrados (com jsdom)             |
 | `tools/`                                         | Servidor local e preparação de `dist/`                                    |
-| `docs/`                                          | Arquitetura e revisão técnica                                             |
+| `docs/`                                          | Guia completo, arquitetura e revisão técnica                              |
 
-Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).
+Para compreender o projeto de ponta a ponta (ficheiros, dados, versões, receitas de manutenção), comece pelo [guia completo](docs/GUIA.md). Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).
 
 ## Publicação no GitHub Pages
 
