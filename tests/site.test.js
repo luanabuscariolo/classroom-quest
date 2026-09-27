@@ -52,6 +52,18 @@ test("public entry has unique IDs, external scripts and resolvable local assets"
         );
       }
     }
+    // The offline cache must list every public file.
+    const sw = fs.readFileSync("sw.js", "utf8");
+    const cached = [...sw.matchAll(/"\.\/([^"]*)"/g)].map((m) => m[1]);
+    const expected = ["", "index.html", "manifest.webmanifest"];
+    for (const dir of ["assets/css", "assets/images", "src"])
+      for (const file of fs.readdirSync(dir)) expected.push(dir + "/" + file);
+    assert.deepEqual([...cached].sort(), [...expected].sort());
+    const manifest = JSON.parse(
+      fs.readFileSync("manifest.webmanifest", "utf8"),
+    );
+    for (const icon of manifest.icons)
+      assert.ok(fs.existsSync(icon.src), icon.src);
   } finally {
     dom.window.close();
   }

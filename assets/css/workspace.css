@@ -54,6 +54,8 @@
   margin-top: 24px;
 }
 .class-card {
+  display: flex;
+  flex-direction: column;
   padding: 22px;
   background: linear-gradient(145deg, #382958, #191b33);
   border: 2px solid #85719f;
@@ -71,14 +73,27 @@
   color: #bdb5d3;
   font-size: 13px;
 }
-.class-card .class-enter {
-  width: 100%;
-  margin: 14px 0;
+.class-card .class-enter-row {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
 }
-.class-card .actions {
-  gap: 7px;
-  display: flex;
-  flex-wrap: wrap;
+.class-card .class-enter-row .button {
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+}
+.class-card .class-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #5b4a86;
+}
+.class-card .class-actions .button {
+  margin: 0;
+  padding: 8px 4px;
 }
 .class-card .button.small {
   font-size: 11px;

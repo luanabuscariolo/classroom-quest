@@ -195,9 +195,6 @@
   font-size: 0.8rem;
   letter-spacing: 0.17em;
 }
-.shuffle-tick {
-  animation: shuffle-tick 0.12s ease-out;
-}
 .draw-name {
   font:
     900 clamp(1.4rem, 5vw, 2rem) ui-monospace,

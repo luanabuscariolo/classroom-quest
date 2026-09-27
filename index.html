@@ -12,24 +12,43 @@
       content="TIC Quest: turmas, pontos, sorteios e diário de aula, com dados guardados neste navegador."
     />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#201744" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/images/icon-192.png" />
     <title>TIC QUEST · A turma entra em jogo</title>
     <link rel="stylesheet" href="./assets/css/styles.css" />
     <link rel="stylesheet" href="./assets/css/feedback.css" />
     <link rel="stylesheet" href="./assets/css/game.css" />
     <link rel="stylesheet" href="./assets/css/workspace.css" />
     <link rel="stylesheet" href="./assets/css/diary.css" />
+    <link rel="stylesheet" href="./assets/css/grades.css" />
   </head>
   <body>
     <section id="classHub" class="game" hidden aria-label="As minhas turmas">
       <header class="hub-header">
-        <div>
-          <div class="eyebrow pixel">
-            <span id="hubTeacherName">O teu nome · MASTER</span> · CENTRAL DE
-            MISSÕES
+        <div class="hub-greeting">
+          <span id="hubAvatar" class="hub-avatar" aria-hidden="true"></span>
+          <div>
+            <div class="eyebrow pixel">
+              <span id="hubTeacherName">O teu nome · MASTER</span> · CENTRAL DE
+              MISSÕES
+            </div>
+            <h1 id="hubHello" class="pixel">AS MINHAS TURMAS</h1>
+            <p id="hubToday" class="hub-today"></p>
+            <p id="hubQuote" class="hub-quote"></p>
           </div>
-          <h1 class="pixel">AS MINHAS TURMAS</h1>
         </div>
-        <span class="hub-emblem">♛</span>
+        <div class="hub-side">
+          <div
+            id="themePicker"
+            class="theme-picker"
+            role="group"
+            aria-label="Tema de cores"
+          ></div>
+          <button id="profileToggle" class="button small" hidden>
+            ✎ Perfil
+          </button>
+        </div>
       </header>
       <form id="teacherForm" class="teacher-onboarding frame">
         <h2 class="pixel">Quem vai orientar a turma?</h2>
@@ -77,8 +96,7 @@
         <p id="teacherError" role="alert"></p>
       </form>
       <div class="hub-toolbar">
-        <button id="hubDiary" class="button">▤ Diário do professor</button
-        ><span id="hubTeacherStatus" role="status"></span
+        <span id="hubTeacherStatus" role="status"></span
         ><button id="createClass" class="button gold">＋ Nova turma</button
         ><button id="hubBackup" class="button mint">↓ Backup completo</button
         ><button id="hubImport" class="button">↑ Restaurar / importar</button
@@ -238,10 +256,17 @@
         mensagem continuar visível, este visor não está a executar os controlos.
         Descarrega o ficheiro e abre-o no navegador.
       </div>
-      <header class="topbar">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true">✦</span>
-          <div><h1 class="pixel">TIC QUEST</h1></div>
+      <header class="topbar game-topbar">
+        <div class="topbar-head">
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true">✦</span>
+            <div><h1 class="pixel">TIC QUEST</h1></div>
+          </div>
+          <div class="actions top-actions">
+            <button id="save" class="button mint">↓ Backup</button
+            ><button id="load" class="button">↑ Importar</button
+            ><button id="classesOpen" class="button">⎋ Sair</button>
+          </div>
         </div>
         <div class="actions">
           <label class="class-label pixel" for="className">TURMA</label
@@ -250,7 +275,8 @@
             class="class-field"
             maxlength="50"
             value="6.º A"
-          /><button id="soundToggle" class="button" aria-pressed="true">
+          /><span id="gameSessionDay" class="session-day pixel"></span
+          ><button id="soundToggle" class="button" aria-pressed="true">
             ♪ Som ligado</button
           ><label class="volume-control" for="volume"
             >Volume
@@ -263,21 +289,28 @@
             /><output id="volumeValue">80%</output></label
           ><button id="editNames" class="button">✎ Nomes</button
           ><span id="gameTeacherName" class="pixel"></span
-          ><button id="classesOpen" class="button">▦ Turmas</button
-          ><button id="gameDiary" class="button">▤ Diário</button
+          ><button id="registoOpen" class="button gold">✎ Registo</button
+          ><button id="gradesOpen" class="button">◆ Avaliação</button
           ><button id="gameProject" class="button">▣ Apresentar</button
-          ><button id="activitiesOpen" class="button gold">★ Dar pontos</button
-          ><button id="save" class="button mint">↓ Backup</button
-          ><button id="load" class="button">↑ Importar</button>
+          ><button id="activitiesOpen" class="button gold">★ Dar pontos</button>
         </div>
       </header>
-      <div class="backup-strip">
-        <div id="gameBackupStatus" class="backup-status" role="status"></div>
-        <button id="quickBackup" class="button mint">
-          Guardar backup / terminar aula
+      <div id="sessionBanner" class="session-banner" hidden>
+        <span id="sessionBannerText"></span
+        ><button id="sessionEdit" class="button gold small">
+          ✎ Editar esta aula</button
+        ><button id="sessionEndEdit" class="button mint small">
+          ✓ Terminar edição
         </button>
       </div>
+      <div class="backup-strip">
+        <div id="gameBackupStatus" class="backup-status" role="status"></div>
+      </div>
       <p id="projectStatus" role="status"></p>
+      <p id="projectHelp" class="diary-hint" hidden>
+        A janela de apresentação mostra apenas o jogo. Mova-a para o projetor e
+        mantenha o Registo neste ecrã.
+      </p>
       <section
         id="healthHud"
         class="hud frame"
@@ -430,7 +463,19 @@
                   id="scorePlusTwo"
                   aria-label="Atribuir dois pontos"
                 >
-                  +2
+                  +2</button
+                ><button
+                  class="button gold"
+                  id="scorePlusFive"
+                  aria-label="Atribuir cinco pontos"
+                >
+                  +5</button
+                ><button
+                  class="button gold"
+                  id="scorePlusTen"
+                  aria-label="Atribuir dez pontos"
+                >
+                  +10
                 </button>
               </div>
               <form id="nameForm" class="name-form">
@@ -478,64 +523,133 @@
       </div>
     </main>
     <section
-      id="diaryOverlay"
+      id="registoOverlay"
       class="overlay"
       hidden
       role="dialog"
       aria-modal="true"
-      aria-labelledby="diaryTitle"
+      aria-labelledby="registoTitle"
     >
       <div class="modal diary-modal">
         <div class="modal-heading">
           <div>
-            <div class="eyebrow pixel">ÁREA DO PROFESSOR</div>
-            <h2 id="diaryTitle" class="pixel">DIÁRIO DA TURMA</h2>
+            <div id="registoClass" class="eyebrow pixel"></div>
+            <h2 id="registoTitle" class="pixel">✎ REGISTO</h2>
+            <div class="registo-day-line">
+              <span id="registoDay" class="registo-day"></span
+              ><button id="registoToday" class="button small" hidden>
+                Voltar a hoje
+              </button>
+            </div>
           </div>
-          <button class="button" data-close="diaryOverlay">
-            Voltar ao jogo
-          </button>
+          <div class="actions">
+            <button id="registoEdit" class="button gold" hidden>
+              ✎ Editar esta aula</button
+            ><button id="registoCancel" class="button">Cancelar</button
+            ><button id="registoSave" class="button mint">
+              ✓ Salvar e sair
+            </button>
+          </div>
         </div>
-        <div class="diary-toolbar">
-          <label
-            >Turma
-            <select id="diaryClass" class="field"></select></label
-          ><button id="diaryProject" class="button gold">
-            ▣ Apresentar jogo</button
-          ><span id="diarySaved" role="status"></span>
-        </div>
-        <p id="projectHelp" class="diary-hint" hidden>
-          A janela de apresentação mostra apenas o jogo. Move-a para o projetor
-          e mantém este diário no teu ecrã.
+        <p id="registoSaved" class="diary-hint" role="status"></p>
+        <p id="registoReadOnly" class="read-only-note" hidden>
+          📅 Aula passada, só leitura. Toque em “✎ Editar esta aula” para
+          alterar.
         </p>
-        <div id="diaryEmpty" hidden>Cria uma turma para começar o diário.</div>
-        <div id="dailyNavigation" class="daily-nav">
-          <button id="dailyHome" class="button">Diário</button
-          ><button id="showDailyHistory" class="button">
+        <div class="diary-tabs">
+          <button id="registoTabDay" class="button" aria-pressed="true">
+            Aula do dia</button
+          ><button id="registoTabHistory" class="button" aria-pressed="false">
             Histórico por dia
           </button>
         </div>
-        <section id="diaryStart">
-          <h3>O que queres fazer?</h3>
-          <div class="daily-start">
-            <button id="annotateToday" class="button gold">
-              ✎ Anotar o dia de hoje</button
-            ><button id="startHistory" class="button mint">
-              ▤ Consultar histórico por dia
+        <section id="registoDayPane" class="diary-content">
+          <div
+            id="logLenses"
+            class="log-lenses"
+            role="group"
+            aria-label="O que registar"
+          ></div>
+          <div id="logLegend" class="log-legend" hidden></div>
+          <section id="summaryPanel" class="registo-panel">
+            <label for="lessonSummary">Sumário</label
+            ><textarea
+              id="lessonSummary"
+              class="field"
+              rows="3"
+              maxlength="20000"
+            ></textarea
+            ><button id="copySummary" class="button small">
+              Copiar sumário</button
+            ><label for="lessonActivities">Atividades realizadas</label
+            ><textarea
+              id="lessonActivities"
+              class="field"
+              rows="3"
+              maxlength="20000"
+            ></textarea>
+          </section>
+          <section id="homeworkPanel" class="registo-panel" hidden>
+            <h3>Nova TPC desta aula</h3>
+            <label for="lessonHomework">Descrição</label
+            ><textarea
+              id="lessonHomework"
+              class="field"
+              rows="2"
+              maxlength="20000"
+            ></textarea>
+            <div class="daily-start">
+              <label for="homeworkDue">Entrega até</label
+              ><input id="homeworkDue" type="date" class="field" /><button
+                id="copyHomework"
+                class="button small"
+              >
+                Copiar TPC
+              </button>
+            </div>
+            <h3>Verificar entregas</h3>
+            <label for="homeworkTarget">TPC a verificar</label
+            ><select id="homeworkTarget" class="field"></select>
+            <p id="homeworkTargetInfo" class="homework-target"></p>
+          </section>
+          <section id="notePanel" class="registo-panel" hidden>
+            <label for="classNote">Nota geral sobre a turma</label
+            ><textarea
+              id="classNote"
+              class="field"
+              rows="3"
+              maxlength="6000"
+            ></textarea>
+            <div id="studentNoteBox" class="student-note" hidden>
+              <label id="studentNoteLabel" for="studentNote"></label
+              ><textarea
+                id="studentNote"
+                class="field"
+                rows="2"
+                maxlength="1000"
+              ></textarea
+              ><button id="studentNoteDone" class="button small">Pronto</button>
+            </div>
+          </section>
+          <div id="logGrid" class="log-grid" hidden></div>
+          <div id="homeworkReward" class="diary-actions" hidden>
+            <label
+              >Pontos por entrega
+              <input
+                id="homeworkPoints"
+                type="number"
+                min="1"
+                max="1000"
+                value="1"
+                class="field" /></label
+            ><button id="rewardHomework" class="button gold">
+              ★ Premiar entregas
             </button>
-          </div>
-          <label for="dailyDate">Outra data</label>
-          <div class="daily-start">
-            <input id="dailyDate" type="date" class="field" /><button
-              id="annotateDate"
-              class="button"
-            >
-              Anotar esta data
-            </button>
+            <p id="homeworkFeedback" role="status"></p>
           </div>
         </section>
-        <section id="dailyHistory" hidden>
-          <h3>Histórico da turma · por dia</h3>
-          <div class="daily-start">
+        <section id="registoHistoryPane" hidden>
+          <div id="historyFilterBar" class="daily-start">
             <input
               id="historyDateFilter"
               type="date"
@@ -545,189 +659,171 @@
               Todas as datas
             </button>
           </div>
-          <div id="dailyHistoryList"></div>
+          <div id="dailyHistoryList" class="history-list"></div>
+          <section id="dailyReport" hidden>
+            <h3 id="dailyReportTitle"></h3>
+            <div class="daily-start">
+              <button id="dailyReportBack" class="button">← Histórico</button
+              ><button id="editReportDay" class="button gold">
+                Abrir este dia</button
+              ><button id="copyWholeDay" class="button">Copiar dia</button
+              ><button id="exportWholeDay" class="button mint">
+                ↓ Descarregar dia
+              </button>
+            </div>
+            <div id="dailyReportView"></div>
+            <div id="dailyPointEvents"></div>
+          </section>
         </section>
-        <section id="dailyReport" hidden>
-          <h3 id="dailyReportTitle"></h3>
-          <div class="daily-start">
-            <button id="dailyReportBack" class="button">← Histórico</button
-            ><button id="editReportDay" class="button gold">Editar dia</button
-            ><button id="copyWholeDay" class="button">
-              Copiar dia completo</button
-            ><button id="exportWholeDay" class="button mint">
-              ↓ Exportar dia
-            </button>
-          </div>
-          <p class="diary-hint">Vista do professor · inclui notas privadas.</p>
-          <div id="dailyReportText"></div>
-          <div id="dailyPointEvents"></div>
-        </section>
-        <div id="dailyEditBar" class="daily-edit-bar" hidden>
-          <button id="saveDiaryDay" class="button mint" disabled>
-            ✓ Guardar dia</button
-          ><button id="showWholeDay" class="button gold">
-            Ver dia completo
+      </div>
+    </section>
+    <section
+      id="gradesOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="gradesTitle"
+    >
+      <div class="modal grades-modal">
+        <div class="modal-heading">
+          <h2 id="gradesTitle" class="pixel">◆ AVALIAÇÃO</h2>
+          <button class="button small" data-close="gradesOverlay">
+            Fechar
           </button>
         </div>
-        <div id="diaryBody" class="diary-layout">
-          <aside class="diary-calendar">
-            <div class="modal-heading">
-              <button
-                id="monthPrev"
-                class="button small"
-                aria-label="Mês anterior"
-              >
-                ‹</button
-              ><strong id="calendarMonth"></strong
-              ><button
-                id="monthNext"
-                class="button small"
-                aria-label="Mês seguinte"
-              >
-                ›
-              </button>
-            </div>
-            <div class="weekdays">
-              <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span
-              ><span>Sex</span><span>Sáb</span><span>Dom</span>
-            </div>
-            <div id="calendarGrid" class="calendar-grid"></div>
-            <label for="lessonDate">Data da aula</label
-            ><input id="lessonDate" class="field" type="date" /><button
-              id="calendarToday"
-              class="button small"
-            >
-              Hoje</button
-            ><label for="lessonSelect">Aulas nesta data</label
-            ><select id="lessonSelect" class="field"></select
-            ><button id="newDiaryLesson" class="button mint">
-              + Iniciar aula
-            </button>
-            <div id="calendarStats" class="diary-hint"></div>
-          </aside>
-          <div class="diary-content">
-            <div class="diary-tabs">
-              <button id="tabLesson" class="button gold" aria-pressed="true">
-                Aula e presenças</button
-              ><button id="tabHomework" class="button" aria-pressed="false">
-                TPC e entregas</button
-              ><button id="tabNotes" class="button" aria-pressed="false">
-                Notas privadas
-              </button>
-            </div>
-            <div id="lessonEmpty" class="empty-lesson">
-              Seleciona uma aula ou clica em “Iniciar aula”.
-            </div>
-            <section id="lessonPane">
-              <div class="diary-two">
-                <label
-                  >N.º da aula
-                  <input
-                    id="lessonNumber"
-                    type="number"
-                    min="1"
-                    max="10000"
-                    class="field" /></label
-                ><label
-                  >Professor
-                  <input
-                    id="lessonTeacher"
-                    class="field"
-                    maxlength="80"
-                    readonly
-                /></label>
-              </div>
-              <label for="lessonSummary">Sumário</label
-              ><textarea
-                id="lessonSummary"
-                class="field"
-                rows="3"
-                maxlength="20000"
-              ></textarea
-              ><label for="lessonActivities">Atividades realizadas</label
-              ><textarea
-                id="lessonActivities"
-                class="field"
-                rows="3"
-                maxlength="20000"
-              ></textarea>
-              <div class="modal-heading">
-                <h3>Presenças</h3>
-                <button id="allPresent" class="button small">
-                  Marcar todos presentes
-                </button>
-              </div>
-              <div id="attendanceCount" class="diary-hint"></div>
-              <div id="attendanceList" class="attendance-list"></div>
-              <div class="diary-actions">
-                <button id="copySummary" class="button">Copiar sumário</button
-                ><button id="exportLesson" class="button mint">
-                  ↓ Registo da aula</button
-                ><label
-                  ><input id="exportPrivate" type="checkbox" /> Incluir notas
-                  privadas no ficheiro</label
-                >
-              </div>
-            </section>
-            <section id="homeworkPane" hidden>
-              <label for="lessonHomework">Trabalho de casa</label
-              ><textarea
-                id="lessonHomework"
-                class="field"
-                rows="4"
-                maxlength="20000"
-              ></textarea
-              ><label for="homeworkDue">Prazo de entrega</label
-              ><input id="homeworkDue" type="date" class="field" /><button
-                id="copyHomework"
-                class="button small"
-              >
-                Copiar TPC
-              </button>
-              <h3>Controlo de entrega</h3>
-              <div id="homeworkList" class="attendance-list"></div>
-              <div class="diary-actions">
-                <label
-                  >Pontos
-                  <input
-                    id="homeworkPoints"
-                    type="number"
-                    min="1"
-                    max="1000"
-                    value="1"
-                    class="field" /></label
-                ><button id="rewardHomework" class="button gold">
-                  ★ Premiar entregas
-                </button>
-              </div>
-              <p id="homeworkFeedback" role="status"></p>
-            </section>
-            <section id="notesPane" hidden>
-              <label for="noteTarget">Notas de</label
-              ><select id="noteTarget" class="field"></select>
-              <form id="noteForm">
-                <label for="noteDate">Data</label
-                ><input
-                  id="noteDate"
-                  type="date"
-                  class="field"
-                  required
-                /><label for="noteText">Nova anotação</label
-                ><textarea
-                  id="noteText"
-                  class="field"
-                  rows="3"
-                  maxlength="6000"
-                  required
-                ></textarea
-                ><button type="submit" class="button mint">
-                  + Guardar nota
-                </button>
-              </form>
-              <div id="notesList"></div>
-            </section>
-            <p id="diaryFeedback" role="status"></p>
+        <div class="grades-toolbar">
+          <label for="gradesPeriod">Período</label
+          ><select id="gradesPeriod" class="field"></select>
+        </div>
+        <div class="diary-tabs">
+          <button id="gradesTabPerformance" class="button" aria-pressed="true">
+            Desempenho</button
+          ><button id="gradesTabProgress" class="button" aria-pressed="false">
+            Acompanhamento</button
+          ><button id="gradesTabScores" class="button" aria-pressed="false">
+            Trabalhos</button
+          ><button id="gradesTabSummary" class="button" aria-pressed="false">
+            Notas do período</button
+          ><button id="gradesTabRules" class="button" aria-pressed="false">
+            Regras
+          </button>
+        </div>
+        <section id="gradesPerformance">
+          <div class="grades-toolbar">
+            <label for="perfView">Mostrar</label
+            ><select id="perfView" class="field">
+              <option value="all">Tudo, aula a aula</option>
+              <option value="behavior">Comportamento, aula a aula</option>
+              <option value="participation">Participação, aula a aula</option>
+              <option value="attendance">
+                Assiduidade (presença e material), aula a aula
+              </option>
+              <option value="delivery">TPC, aula a aula</option>
+              <option value="lesson">Uma aula</option>
+              <option value="average">Média até uma aula</option></select
+            ><label id="perfLessonLabel" for="perfLesson" hidden>Aula</label
+            ><select id="perfLesson" class="field" hidden></select>
           </div>
+          <p id="perfNote" class="diary-hint"></p>
+          <div id="perfLegend" class="log-legend"></div>
+          <div class="grades-table-wrap">
+            <table id="perfTable" class="grades-table perf-table"></table>
+          </div>
+        </section>
+        <section id="gradesProgress" hidden>
+          <p id="progressNote" class="diary-hint"></p>
+          <div class="grades-table-wrap">
+            <table id="progressTable" class="grades-table"></table>
+          </div>
+          <div id="progressExplain" class="grade-explain" hidden></div>
+        </section>
+        <section id="gradesScores" hidden>
+          <div class="actions">
+            <label class="rule-field"
+              >Ver
+              <select id="scoresView" class="field"></select>
+            </label>
+            <button id="addAssessment" class="button small">
+              ＋ Novo trabalho
+            </button>
+          </div>
+          <div id="assessmentForm" class="assessment-form" hidden></div>
+          <p id="scoresNote" class="diary-hint"></p>
+          <div class="grades-table-wrap">
+            <table id="scoresTable" class="grades-table"></table>
+          </div>
+        </section>
+        <section id="gradesSummary" hidden>
+          <div class="actions">
+            <button id="inovarMode" class="button" aria-pressed="false">
+              Modo Inovar</button
+            ><button id="exportGrades" class="button mint">
+              ↓ Exportar planilha
+            </button>
+          </div>
+          <p id="summaryNote" class="diary-hint"></p>
+          <div class="grades-table-wrap">
+            <table id="summaryTable" class="grades-table"></table>
+          </div>
+          <div id="summaryExplain" class="grade-explain" hidden></div>
+        </section>
+        <section id="gradesRules" hidden>
+          <form id="rulesForm" class="rules-form"></form>
+          <p id="rulesStatus" class="diary-hint" role="status"></p>
+        </section>
+      </div>
+    </section>
+    <section
+      id="pastOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pastTitle"
+    >
+      <div class="modal">
+        <div class="modal-heading">
+          <h2 id="pastTitle" class="pixel">📅 AULA PASSADA</h2>
+          <button class="button small" data-close="pastOverlay">
+            Cancelar
+          </button>
+        </div>
+        <p class="diary-hint">
+          A aula abre só para leitura. Para alterar, toque em “✎ Editar esta
+          aula” dentro da turma.
+        </p>
+        <div id="pastList" class="past-list"></div>
+        <div class="daily-start">
+          <label for="pastDate">Outra data</label
+          ><input id="pastDate" type="date" class="field" /><button
+            id="pastOpen"
+            class="button"
+          >
+            Abrir esta data
+          </button>
+        </div>
+        <p id="pastError" class="diary-hint" role="alert"></p>
+      </div>
+    </section>
+    <section
+      id="exitOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="exitTitle"
+    >
+      <div class="modal">
+        <h2 id="exitTitle" class="pixel">⎋ SAIR DA TURMA</h2>
+        <p>
+          Tudo já está gravado neste aparelho. Quer descarregar também um backup
+          antes de sair?
+        </p>
+        <div class="actions">
+          <button id="exitBackup" class="button mint">↓ Backup e sair</button
+          ><button id="exitNoBackup" class="button">Sair sem backup</button
+          ><button class="button" data-close="exitOverlay">Cancelar</button>
         </div>
       </div>
     </section>

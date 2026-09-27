@@ -52,3 +52,16 @@ export function when(date) {
 export function stamp() {
   return new Date().toISOString().replace(/[:.]/g, "-");
 }
+
+/** ISO timestamp on a given day (YYYY-MM-DD) at the current time of day. */
+export function stampOn(day, now = new Date()) {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(
+    y,
+    m - 1,
+    d,
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+  ).toISOString();
+}

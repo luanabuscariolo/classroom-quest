@@ -1,0 +1,23 @@
+{
+  "name": "TIC Quest",
+  "short_name": "TIC Quest",
+  "description": "Jogo de sala de aula e diário do professor, com dados guardados no aparelho.",
+  "lang": "pt-PT",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#201744",
+  "theme_color": "#201744",
+  "icons": [
+    {
+      "src": "assets/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -45,22 +45,23 @@ flowchart LR
 
 ### Raiz
 
-| Ficheiro / pasta                       | Para que serve                                                               |
-| -------------------------------------- | ---------------------------------------------------------------------------- |
-| `index.html`                           | Todo o HTML da aplicação (ecrãs e janelas). Carrega os CSS e `src/app.js`.   |
-| `src/`                                 | JavaScript da aplicação (ver abaixo).                                        |
-| `assets/css/`                          | Estilos, divididos por área.                                                 |
-| `assets/images/`                       | Cenário e folhas de sprites (WebP).                                          |
-| `tests/`                               | Testes automáticos.                                                          |
-| `tools/`                               | `serve.js` (servidor local) e `build.js` (prepara `dist/` para publicar).    |
-| `docs/`                                | Esta documentação.                                                           |
-| `.github/workflows/`                   | `check.yml` verifica cada push; `pages.yml` publica (manual).                |
-| `package.json`, `package-lock.json`    | Comandos `npm` e versões exatas das ferramentas de desenvolvimento.          |
-| `eslint.config.js`, `.prettierrc.json` | Regras de qualidade (ESLint) e de formatação (Prettier).                     |
-| `.editorconfig`, `.gitattributes`      | Fins de linha e indentação consistentes.                                     |
-| `.gitignore`                           | Exclui `node_modules/`, `dist/` e nomes típicos de backups (dados pessoais). |
-| `.claude/launch.json`                  | Configuração do servidor local para o Claude Code (opcional).                |
-| `LICENSE`, `SECURITY.md`, `README.md`  | Licença, segurança/privacidade e apresentação do projeto.                    |
+| Ficheiro / pasta                       | Para que serve                                                                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `index.html`                           | Todo o HTML da aplicação (ecrãs e janelas). Carrega os CSS e `src/app.js`.                                |
+| `src/`                                 | JavaScript da aplicação (ver abaixo).                                                                     |
+| `assets/css/`                          | Estilos, divididos por área.                                                                              |
+| `assets/images/`                       | Cenário e folhas de sprites (WebP).                                                                       |
+| `tests/`                               | Testes automáticos.                                                                                       |
+| `tools/`                               | `serve.js` (servidor local), `build.js` (prepara `dist/`), `demo.js`/`demo-data.js` (turma fictícia 5ºX). |
+| `docs/`                                | Esta documentação.                                                                                        |
+| `.github/workflows/`                   | `check.yml` verifica cada push; `pages.yml` publica (manual).                                             |
+| `package.json`, `package-lock.json`    | Comandos `npm` e versões exatas das ferramentas de desenvolvimento.                                       |
+| `eslint.config.js`, `.prettierrc.json` | Regras de qualidade (ESLint) e de formatação (Prettier).                                                  |
+| `.editorconfig`, `.gitattributes`      | Fins de linha e indentação consistentes.                                                                  |
+| `.gitignore`                           | Exclui `node_modules/`, `dist/` e nomes típicos de backups (dados pessoais).                              |
+| `.claude/launch.json`                  | Configuração do servidor local para o Claude Code (opcional).                                             |
+| `manifest.webmanifest`, `sw.js`        | App instalável e funcionamento sem internet (cache dos ficheiros).                                        |
+| `LICENSE`, `SECURITY.md`, `README.md`  | Licença, segurança/privacidade e apresentação do projeto.                                                 |
 
 ### `src/` — JavaScript
 
@@ -114,13 +115,17 @@ flowchart TB
 | Ficheiro              | Linhas | Responsabilidade                                                                                                                       |
 | --------------------- | -----: | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `app.js`              |   ~750 | Ponto de entrada. Turma aberta, cartões dos alunos, classificação, aluno selecionado, pontos, vidas, overlays. Cria os outros módulos. |
-| `diary.js`            |   ~840 | Ecrã do diário: calendário, aulas, presenças, TPC, notas privadas, histórico por dia, rascunho do dia.                                 |
+| `diary.js`            |   ~510 | Ecrã ✎ Registo: aula do dia (sumário, atividades, TPC, nota da turma), histórico por dia, backup e sair.                               |
 | `diary-data.js`       |   ~210 | Regras do diário sem ecrã: criar aula, quem pode receber pontos de TPC, textos dos relatórios.                                         |
-| `model.js`            |   ~390 | Valida e normaliza dados; converte formatos antigos; define `VERSION` (11).                                                            |
+| `grading.js`          |   ~290 | Regras e cálculo da nota do período (sem ecrã); exportação CSV.                                                                        |
+| `grades-ui.js`        |   ~550 | Janela ◆ Avaliação: acompanhamento, trabalhos, notas do período, modo Inovar, regras.                                                  |
+| `performance.js`      |   ~220 | Separador Desempenho: histórico aula a aula, uma aula, média até uma aula.                                                             |
+| `lesson-log.js`       |   ~250 | Grelha de alunos do Registo; `MARKS` com as opções e emojis de cada marcação.                                                          |
+| `model.js`            |   ~390 | Valida e normaliza dados; converte formatos antigos; define `VERSION` (13).                                                            |
 | `backup-ui.js`        |   ~320 | Janelas de backup e importação; avisos de gravação.                                                                                    |
 | `raffle.js`           |   ~300 | Roleta de sorteio (desenho em `<canvas>`, animação, vencedor).                                                                         |
 | `presentation.js`     |   ~180 | Abre a segunda janela e copia para lá só o jogo, sem dados privados.                                                                   |
-| `hub.js`              |   ~170 | Lista de turmas: criar, duplicar, arquivar, exportar.                                                                                  |
+| `hub.js`              |   ~170 | Lista de turmas: criar, arquivar, exportar, apagar (com cópia descarregada antes).                                                     |
 | `audio.js`            |   ~150 | Sons gerados pelo navegador (Web Audio), sem ficheiros de som.                                                                         |
 | `avatars.js`          |   ~150 | Escolha e desenho dos avatares (sprites).                                                                                              |
 | `activities.js`       |   ~145 | "Atribuir pontos" a vários alunos; regista o histórico.                                                                                |
@@ -132,7 +137,8 @@ flowchart TB
 | `backup.js`           |    ~70 | Empacota e verifica backups (checksum).                                                                                                |
 | `students.js`         |    ~60 | Identidade dos alunos: criar, corrigir nome, remover, "é o mesmo aluno?".                                                              |
 | `dom.js`              |    ~55 | Atalhos de DOM (`$`, `element`, `button`) e downloads.                                                                                 |
-| `utils.js`            |    ~55 | Datas, identificadores, cópias, validações pequenas.                                                                                   |
+| `utils.js`            |    ~65 | Datas, identificadores, cópias, validações pequenas.                                                                                   |
+| `theme.js`            |   ~230 | Temas Roxo, Verde, Preto e Claro (recoloração do CSS por teoria das cores).                                                            |
 | `presentation-dom.js` |    ~30 | Atualiza a janela de apresentação sem reiniciar animações.                                                                             |
 | `storage.js`          |    ~20 | Grava no `localStorage` só se ninguém mudou os dados entretanto.                                                                       |
 | `points.js`           |    ~15 | Regra para desfazer um lançamento de pontos.                                                                                           |
@@ -148,6 +154,7 @@ A **ordem** em que o `index.html` carrega os ficheiros importa: quando duas regr
 |     3 | `game.css`         | Ecrã de jogo: cenário, cartões, roleta, avatares.                    |
 |     4 | `workspace.css`    | Lista de turmas, backup, importação, professor.                      |
 |     5 | `diary.css`        | Diário.                                                              |
+|     6 | `grades.css`       | Registo da aula e Avaliação.                                         |
 |     — | `presentation.css` | Só na janela de apresentação (acrescentado por `presentation.js`).   |
 
 ---
@@ -239,18 +246,19 @@ Se o JavaScript falhar, o aviso `bootWarning` do HTML continua visível. É uma 
 | `tic-quest.workspace.v8`          | O workspace atual (JSON). O "v8" no nome é histórico e não mudou, para não perder dados. |
 | `tic-quest.workspace.v8.previous` | A versão anterior, guardada a cada gravação, para recuperação.                           |
 
-### Estrutura (versão 11)
+### Estrutura (versão 13)
 
 ```text
 workspace
 ├── format: "tic-quest-workspace"
-├── version: 11
+├── version: 13
 ├── revision: 42                    ← sobe 1 a cada alteração
 ├── lastBackup: { date, revision }  ← último backup confirmado
 ├── teachers: [ { id, name, title, avatar } ]
 ├── activeTeacherId
 ├── activeClassId
 ├── presets: [ { name: "TPC entregue", points: 1 } ]   ← atividades frequentes
+├── grading: { weights, values, periods }            ← regras da nota (editáveis)
 └── classes: [
       {
         id, className: "7.º B", lives: 0–5, archived: false,
@@ -266,9 +274,16 @@ workspace
           lessons: [ { id, date, number, teacher, summary, activities,
                        homework, due,
                        attendance: [ { slot, studentId, name, status,
-                                       note, delivery, awardId } ] } ],
+                                       note, delivery, awardId,
+                                       behavior, participation, material } ] } ],
           notes:   [ { id, date, text, slot | null, studentId, name } ]
         }
+        assessments: [                                    ← trabalhos (notas 0–100)
+          { id, periodId, name, weight, date, description,
+            criteria: [ { id, name, weight } ],            ← pesos somam 100
+            scores: { studentId: nota },                   ← sem critérios
+            marks:  { studentId: { criterioId: nota } } }  ← com critérios
+        ]
       }
     ]
 ```
@@ -279,7 +294,27 @@ Pontos importantes:
 - **Aluno = posição + `id`.** Desde a versão 11, cada aluno com nome tem um `id`. Corrigir o nome mantém o `id`; remover o aluno apaga-o. Ver [identidade](ARQUITETURA.md#identidade-dos-alunos-versão-11).
 - **Registos guardam o nome da altura.** Mesmo que o aluno seja renomeado ou removido, o histórico e o diário mostram o nome que tinha quando o registo foi feito.
 - **TPC premiado:** a linha da presença guarda `awardId`, o `id` do lançamento no histórico. A validação exige que essa ligação exista.
+- **Registo da aula (versão 12):** cada linha de presença guarda também `behavior` (good/regular/poor), `participation` (normal/active/low) e `material` (true/false). `status` pode ser `unmarked`, `present`, `late`, `absent` ou `excused` (falta justificada); `unmarked` conta como presente.
+- **A nota do período nunca é guardada.** É recalculada (`grading.js`) a partir destes registos, das notas dos trabalhos e das regras em `grading`. Mudar as regras recalcula tudo sem perder registos.
 - **Nível ("fase"):** não é guardado. É calculado: `fase = floor(pontos / 20) + 1`.
+
+### Como é calculada a nota do período
+
+As regras ficam em `workspace.grading` e editam-se no separador **Regras** da janela **◆ Avaliação**. Valores sugeridos (os da planilha usada no 1.º período de 2026/27, mais valores por marcação):
+
+| Parte                                | Peso na nota final | Como é calculada                                                                                                                                                                               |
+| ------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cognitivo                            | 80%                | Média das notas dos trabalhos do período, ponderada pelo peso de cada um (sugestão: 1.º Trabalho 50, 2.º Trabalho 40, Extra 10). Trabalhos sem nota ficam de fora e o aluno é marcado com `*`. |
+| Comportamento                        | 10%                | Média das aulas em que o aluno esteve (aula sem ocorrência = 100): Bom 100, Regular 60, A melhorar 20.                                                                                         |
+| Participação                         | 5%                 | Média das aulas em que esteve: Normal 100, Ativa 100 (marca positiva), Fraca 50.                                                                                                               |
+| Assiduidade, pontualidade e material | 5%                 | Cada aula vale 100, menos 50 por atraso e 50 por falta de material; falta vale 0; falta justificada não conta.                                                                                 |
+
+- **Todos começam no máximo.** Sem nenhuma aula registada, comportamento, participação e assiduidade valem 100. Cada aula com uma ocorrência baixa a média; as aulas seguintes sem ocorrências vão recuperando (um "A melhorar" em 10 aulas dá 92; com mais 10 aulas boas, 96).
+- **Nota final (0–100)** = soma das partes × peso. Enquanto não há nenhuma nota de trabalho, a parte Cognitiva fica de fora e usa-se a proporção entre as outras.
+- **Nota máxima possível** = a nota final se o aluno tirar 100 em todos os trabalhos ainda sem nota. Começa em 5,00 e só desce com resultados reais.
+- **Nota 0–5** = nota final ÷ 20, com duas casas (igual à planilha).
+- Uma aula pertence ao período cujas datas a contêm (separador Regras).
+- Verificação: a linha de exemplo da planilha (50/40/90, 80, 95, 90) dá 57,3 e 2,86, como na planilha (`tests/grading.test.js`).
 
 ### Limites (validados em `model.js`)
 
@@ -371,6 +406,53 @@ sequenceDiagram
 - Nunca recebe o workspace nem o diário. As notas privadas não chegam ao projetor.
 - Durante a roleta, o temporizador da animação corre na janela de apresentação, para continuar a girar mesmo com a janela principal minimizada.
 
+### …se faz o registo da aula (versão 12)
+
+A **data da aula** escolhe-se uma vez, no ecrã das turmas ("Entrar na aula de 27/09/2026 →"), e aparece no topo do jogo e do Registo. **✎ Registo** abre a aula desse dia numa só página:
+
+- **Separadores**, cada um com a sua informação (nada se repete): **📝 Sumário** (sumário e atividades realizadas), **✅ Presença**, **😊 Comportamento**, **👍 Participação**, **🎒 Material**, **⏳ TPC** e **💬 Observação**.
+- Nas marcações, cada aluno mostra todas as opções em emoji; **um toque escolhe** a opção (a legenda aparece por baixo dos separadores). Por baixo das opções aparecem as outras marcações do dia que não são normais.
+- **TPC:** em cima, a **nova TPC desta aula** (descrição e prazo); em baixo, **a TPC a verificar** (por defeito, a que tem entrega nesse dia) com a frase "As marcações abaixo referem-se à TPC dada a …". As entregas e o prémio de pontos ficam ligados a essa TPC.
+- **Observação:** nota geral sobre a turma e, tocando num aluno, uma observação só dele.
+- Tudo grava enquanto se escreve, para nada se perder se o tablet desligar. **✓ Salvar e sair** confirma e volta ao jogo; **Cancelar** (ou Esc) pergunta "Sair sem salvar?" e repõe tudo como estava ao abrir o Registo (incluindo pontos de TPC premiados nessa vez).
+- **Histórico por dia:** lista de dias; ao abrir um dia, vê-se tudo arrumado (sumário, TPC, faltas, atrasos, comportamento, observações, nota da turma, pontos com "Desfazer"). "Editar este dia" volta ao Registo nessa data.
+
+Nada disto aparece no projetor.
+
+### …se abre uma aula passada
+
+Na tela inicial, **📅 Aula passada** lista as aulas registadas da turma (ou deixa escolher outra data). A aula abre **só de leitura**: uma faixa diz "Aula de 22/09 · só leitura" e os botões que alteram dados ficam desativados, no jogo e no Registo. **✎ Editar esta aula** (na faixa ou no Registo) pede confirmação e permite alterar; **✓ Terminar edição** volta a bloquear. Ao sair e voltar a entrar, a aula está de novo só de leitura.
+
+### …se verifica uma nota
+
+Em **Notas do período** ou **Acompanhamento**, toque num aluno. O painel **Como foi calculada** mostra cada parte com os números usados (ex.: "7 × sem ocorrências (100) + 3 × falta (0) = 700 ÷ 10 aulas") e a conta final. Para experimentar com dados fictícios, `npm run demo` cria a turma 5ºX (30 alunos com um cenário cada, 10 aulas, trabalhos e TPC); `tests/demo.test.js` confirma as notas de todos os alunos com um cálculo independente.
+
+### …se avalia um trabalho por critérios
+
+Em **◆ Avaliação → Trabalhos**, a lista **Ver** mostra **Todos os trabalhos do período** (uma coluna por trabalho) ou a **ficha de um trabalho**. Tocar no nome de um trabalho, ou em **＋ Novo trabalho**, abre a ficha:
+
+- **Nome, data, peso na nota do período e descrição** (o que os alunos têm de fazer).
+- **＋ Critério** acrescenta um critério com nome e peso; o primeiro recebe 100% e os seguintes o que falta. A soma tem de dar **100%**; enquanto não der, aparece um aviso e as notas desse trabalho não são calculadas.
+- Na tabela, cada aluno tem uma nota **0–100 por critério** (100 = fez tudo, 50 = em parte, 0 = não fez). **Vazios → 100** dá 100 nesse critério a quem ainda não tem nota. A coluna **Nota do trabalho** = Σ (nota do critério × peso) ÷ 100 e aparece quando todos os critérios têm nota.
+- Exemplo (turma 5ºX, 1.º Trabalho): Criou a pasta 20% · Criou o ficheiro .txt 20% · Guardou o ficheiro na pasta 20% · Escreveu o texto pedido 40%. Notas 100, 100, 100, 30 → (100×20 + 100×20 + 100×20 + 30×40) ÷ 100 = **72**.
+- Trabalhos sem critérios continuam com uma nota única, que também se pode lançar na vista de todos os trabalhos. Com critérios, essa vista mostra a nota calculada (só se altera na ficha).
+
+### …se consulta o desempenho de um aluno
+
+**◆ Avaliação → Desempenho** (primeiro separador) mostra o histórico sem médias: uma coluna por aula, com o emoji do que aconteceu. Em **Mostrar** escolhe-se: tudo (só ocorrências; ✓ = aula sem ocorrências), só comportamento, participação, assiduidade (presença e material) ou TPC, **uma aula** (todas as marcações e observações desse dia) ou **média até uma aula** (médias do período até essa data, com contagem de faltas, atrasos e falta de material).
+
+### …se acompanha a turma durante o período
+
+**◆ Avaliação → Acompanhamento** mostra, para cada aluno, Comportamento, Participação e Assiduidade (começam em 100), a média dos trabalhos, a **nota máxima possível** e a nota atual (0–5). Cada valor mostra ▼ ou ▲ com o efeito da última aula registada e tem cor: verde (90 ou mais), amarelo (70–89), vermelho (abaixo de 70).
+
+### …se sai da turma
+
+No topo do jogo, **↓ Backup** descarrega a cópia com um clique e **⎋ Sair** pergunta: "Backup e sair", "Sair sem backup" ou "Cancelar". Os dados já estão gravados no aparelho em qualquer caso.
+
+### …se lança o período no Inovar
+
+**◆ Avaliação → Notas do período** mostra a tabela e a nota 0–5. **Modo Inovar** mostra só número, nome e nota, pela ordem da turma, com uma caixa para marcar cada aluno já lançado. **↓ Exportar planilha** descarrega um CSV (abre no Excel) com todas as partes, faltas e atrasos.
+
 ### …se remove um aluno (versão 11)
 
 "Remover aluno da turma" (ou apagar o nome) pede confirmação, zera a posição (`id: null`, nome vazio, pontos 0) e tira o aluno das equipas. O histórico e o diário **mantêm** os registos antigos com o nome da altura, mas esses lançamentos deixam de poder ser desfeitos ou premiados, porque a posição já não tem aquele aluno.
@@ -385,14 +467,16 @@ Há duas coisas diferentes a que chamamos "versão": a **versão do formato dos 
 
 O HTML original não está no repositório, por isso a tabela descreve apenas o que o código atual **reconhece e trata de forma diferente**.
 
-| Versão | Tipo de ficheiro          | Aceite hoje?      | O que a distingue (segundo o código atual)                                                                                                          |
-| ------ | ------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1      | Save de uma turma         | Sim, convertida   | Equipas guardavam os IDs dos alunos (`memberIds`) em vez das posições.                                                                              |
-| 2–6    | Save de uma turma         | Sim, convertida   | Equipas por posição (`members`). O código trata 2–6 da mesma forma. Todas passam a turma dentro de um workspace novo.                               |
-| 7      | —                         | Não               | Não é reconhecida pelo código (não há nenhuma conversão para ela).                                                                                  |
-| 8      | Workspace (várias turmas) | Sim, convertida   | Primeiro formato com várias turmas. Sem perfis de professor (são ignorados ao importar).                                                            |
-| 9–10   | Workspace / backup        | Sim, convertida   | Com perfis de professor. O código trata 9 e 10 da mesma forma. Alunos sem `id`; registos sem `studentId`.                                           |
-| **11** | Workspace / backup        | **Formato atual** | Cada aluno com nome tem `id`; histórico, presenças e notas guardam `studentId`. Corrigir um nome mantém o aluno; "Remover aluno" liberta a posição. |
+| Versão | Tipo de ficheiro          | Aceite hoje?      | O que a distingue (segundo o código atual)                                                                                                                                                           |
+| ------ | ------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1      | Save de uma turma         | Sim, convertida   | Equipas guardavam os IDs dos alunos (`memberIds`) em vez das posições.                                                                                                                               |
+| 2–6    | Save de uma turma         | Sim, convertida   | Equipas por posição (`members`). O código trata 2–6 da mesma forma. Todas passam a turma dentro de um workspace novo.                                                                                |
+| 7      | —                         | Não               | Não é reconhecida pelo código (não há nenhuma conversão para ela).                                                                                                                                   |
+| 8      | Workspace (várias turmas) | Sim, convertida   | Primeiro formato com várias turmas. Sem perfis de professor (são ignorados ao importar).                                                                                                             |
+| 9–10   | Workspace / backup        | Sim, convertida   | Com perfis de professor. O código trata 9 e 10 da mesma forma. Alunos sem `id`; registos sem `studentId`.                                                                                            |
+| 11     | Workspace / backup        | Sim, convertida   | Cada aluno com nome tem `id`; histórico, presenças e notas guardam `studentId`. Corrigir um nome mantém o aluno; "Remover aluno" liberta a posição.                                                  |
+| 12     | Workspace / backup        | Sim, convertida   | Registo da aula (comportamento, participação, material, falta justificada), trabalhos com notas por período e regras da nota (`grading`). Dados 11 recebem os valores normais e as regras sugeridas. |
+| **13** | Workspace / backup        | **Formato atual** | Ficha de cada trabalho: data, descrição e critérios de avaliação com pesos (somam 100) e nota por critério. Trabalhos 12 ficam sem data, descrição nem critérios.                                    |
 
 **O que acontece a dados antigos ao abrir a versão 11:**
 
@@ -408,9 +492,9 @@ O HTML original não está no repositório, por isso a tabela descreve apenas o 
 
 | Situação                                             | Resultado                                                                |
 | ---------------------------------------------------- | ------------------------------------------------------------------------ |
-| Aplicação nova abre dados/backups 1–6, 8, 9, 10, 11  | Funciona; converte para 11.                                              |
-| Aplicação antiga (até 10) abre um backup 11          | **Recusa** ("Versão não suportada"). Não há perda de dados, só não abre. |
-| Dados no `localStorage` depois de usar a versão nova | Passam a estar em formato 11 na próxima gravação.                        |
+| Aplicação nova abre dados/backups 1–6, 8–13          | Funciona; converte para 13.                                              |
+| Aplicação antiga abre um backup mais novo            | **Recusa** ("Versão não suportada"). Não há perda de dados, só não abre. |
+| Dados no `localStorage` depois de usar a versão nova | Passam ao formato atual na próxima gravação.                             |
 
 ### 6.2 Evolução do código
 
@@ -446,17 +530,20 @@ O HTML original não está no repositório, por isso a tabela descreve apenas o 
 
 `npm test` corre todos; `npm run check` também verifica formatação e lint (é o que o GitHub corre a cada push). Os testes usam apenas dados fictícios.
 
-| Ficheiro                    | O que garante                                                                                                                    |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/model.test.js`       | Backups vão e voltam iguais; ficheiro alterado é recusado; formatos antigos abrem; limites e dados inválidos.                    |
-| `tests/students.test.js`    | Migração para a versão 11; corrigir nome vs. remover; IDs repetidos recusados; regras do avatar.                                 |
-| `tests/diary.test.js`       | Numeração de aulas; prémio de TPC (uma vez, só a quem entregou, limites); conteúdo dos relatórios.                               |
-| `tests/storage.test.js`     | Gravação guarda a versão anterior; deteta alterações de outra janela; erro de quota não finge sucesso.                           |
-| `tests/persistence.test.js` | Arranque vazio; recuperação da cópia anterior; armazenamento inacessível; conflito; restauro.                                    |
-| `tests/app.test.js`         | Percurso completo no ecrã: professor, turma, pontos, vidas, equipas, diário, TPC, apresentação (sem dados privados), importação. |
-| `tests/game.test.js`        | Roleta (com vencedor e cancelada), "Atenção, turma!", atividades, renomear e remover aluno.                                      |
-| `tests/teacher.test.js`     | Nome do professor começa vazio e é lembrado; perfis antigos não são apagados.                                                    |
-| `tests/site.test.js`        | HTML sem IDs repetidos nem scripts embutidos; todos os ficheiros referidos existem.                                              |
+| Ficheiro                    | O que garante                                                                                                                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/model.test.js`       | Backups vão e voltam iguais; ficheiro alterado é recusado; formatos antigos abrem; limites e dados inválidos.                                                                                        |
+| `tests/students.test.js`    | Migração para a versão 11; corrigir nome vs. remover; IDs repetidos recusados; regras do avatar.                                                                                                     |
+| `tests/grading.test.js`     | Nota do período: exemplo da planilha (57,3 · 2,86), faltas, atrasos, material, trabalhos em falta, sem trabalhos = sem nota final, nota máxima possível, regras, migração, exportação.               |
+| `tests/demo.test.js`        | Turma 5ºX: notas dos 30 alunos iguais a um cálculo independente; cenários conferidos à mão; explicação "Como foi calculada".                                                                         |
+| `tests/theme.test.js`       | Regras de cor dos temas Verde, Preto e Claro.                                                                                                                                                        |
+| `tests/diary.test.js`       | Numeração de aulas; prémio de TPC (uma vez, só a quem entregou, limites); conteúdo dos relatórios.                                                                                                   |
+| `tests/storage.test.js`     | Gravação guarda a versão anterior; deteta alterações de outra janela; erro de quota não finge sucesso.                                                                                               |
+| `tests/persistence.test.js` | Arranque vazio; recuperação da cópia anterior; armazenamento inacessível; conflito; restauro.                                                                                                        |
+| `tests/app.test.js`         | Percurso completo no ecrã: professor, turma, pontos, vidas, equipas, diário, TPC, apresentação (sem dados privados), importação.                                                                     |
+| `tests/game.test.js`        | Roleta, "Atenção, turma!", atividades, renomear e remover aluno, Registo (emojis, TPC verificada noutro dia, cancelar/salvar), data da aula, tabelas de desempenho e acompanhamento, saída da turma. |
+| `tests/teacher.test.js`     | Nome do professor começa vazio e é lembrado; perfis antigos não são apagados.                                                                                                                        |
+| `tests/site.test.js`        | HTML sem IDs repetidos nem scripts embutidos; todos os ficheiros referidos existem; a cache offline (`sw.js`) lista todos os ficheiros públicos.                                                     |
 
 Os testes de ecrã usam o **jsdom**, um navegador simulado dentro do Node. Por isso não verificam o aspeto visual; isso continua a ser feito à mão, no navegador.
 
@@ -536,7 +623,7 @@ Antes de qualquer mudança: `npm run dev` para ver a aplicação e `npm run chec
 | Controlador     | Módulo `createX(app)` responsável por um ecrã.                                                        |
 | Getter / `live` | Forma de ler sempre o valor atual (turma, workspace) mesmo depois de ser substituído.                 |
 | Overlay         | Janela por cima do ecrã (backup, equipas, diário…). Abre com `openOverlay`, fecha com `closeOverlay`. |
-| Rascunho do dia | Cópia do diário onde se escreve até carregar em "Guardar"; evita gravar meio escrito.                 |
+| Dia da aula     | A data escolhida ao entrar na turma; tudo o que se regista ou pontua fica nesse dia.                  |
 | Apresentação    | Segunda janela para o projetor, só com o jogo.                                                        |
 | Migração        | Conversão automática de dados de uma versão antiga para a atual, feita em `model.js` ao abrir.        |
 | Checksum        | "Impressão digital" do backup para detetar ficheiros alterados ou incompletos.                        |

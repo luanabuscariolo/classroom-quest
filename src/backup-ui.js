@@ -82,9 +82,14 @@ export function createBackupUI(app) {
         "Não foi possível gerar o backup: " + e.message;
     }
   }
-  $("save").onclick = openBackup;
+  // In class: one click downloads the backup (no receipt step).
+  $("save").onclick = () => {
+    const name = backupNow();
+    $("gameBackupStatus").textContent = name
+      ? "✓ Backup descarregado: " + name
+      : "⚠ Não foi possível gerar o backup.";
+  };
   $("hubBackup").onclick = openBackup;
-  $("quickBackup").onclick = openBackup;
   $("downloadBackup").onclick = function () {
     startBackup(false);
   };
@@ -320,5 +325,24 @@ export function createBackupUI(app) {
     }
   });
 
-  return { updateStatus };
+  /**
+   * One-click backup (Registo screen): download and mark it as done. Returns
+   * the file name, or null when the backup could not be created.
+   */
+  function backupNow() {
+    try {
+      const data = packageBackup(persistence.workspace),
+        name = "TIC_BACKUP_COMPLETO_" + stamp() + ".json";
+      downloadJSON(data, name);
+      persistence.confirmBackup(
+        persistence.workspace.revision,
+        data.exportedAt,
+      );
+      return name;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  return { updateStatus, backupNow };
 }

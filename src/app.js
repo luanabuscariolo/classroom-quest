@@ -18,6 +18,7 @@ import {
 import { createBackupUI } from "./backup-ui.js";
 import { createDiary } from "./diary.js";
 import { $, button, element, reducedMotion, replay } from "./dom.js";
+import { createGradesUI } from "./grades-ui.js";
 import { createHub } from "./hub.js";
 import { createPersistence } from "./persistence.js";
 import { createPresentation } from "./presentation.js";
@@ -25,13 +26,20 @@ import { createRaffle } from "./raffle.js";
 import { createRoster } from "./roster.js";
 import { createTeacher } from "./teacher.js";
 import { createTeams } from "./teams.js";
+import { THEMES, THEME_KEY, applyTheme } from "./theme.js";
 import { removeStudent, setStudentName } from "./students.js";
-import { pad } from "./utils.js";
+import { dateLabel, dayISO, pad, stampOn, validDay } from "./utils.js";
 
 const { playSound } = createAudio(document, window);
 
 // Placeholder until enterClass() opens a class from the workspace.
 let state = { version: 6, className: "", lives: 5, students: [], groups: [] };
+// Day of the lesson being taught: chosen on the class list, used by every
+// record made while the class is open (Registo, points).
+let sessionDay = dayISO(new Date()),
+  // A past lesson opens read-only; "Editar esta aula" allows changes until
+  // "Terminar edição" (or leaving the class).
+  readOnly = false;
 let selected = -1,
   cards = [],
   returnFocus = null,
@@ -154,7 +162,7 @@ function updateCard(i) {
   c.button.setAttribute("aria-label", cardLabel(s, rankById[i] || i + 1));
   c.button.setAttribute("aria-pressed", selected === i ? "true" : "false");
   c.checkbox.checked = s.inPool && !!s.name;
-  c.checkbox.disabled = !s.name;
+  c.checkbox.disabled = !s.name || readOnly;
   c.checkbox.setAttribute(
     "aria-label",
     "Incluir " + (s.name || "mesa " + (i + 1)) + " no sorteio",
@@ -210,8 +218,15 @@ function updateEditor() {
   $("masterProfile").hidden = !!s;
   $("studentProfile").hidden = !s;
   $("characterPanel").classList.toggle("master-mode", !s);
-  ["scoreMinus", "scorePlus", "scorePlusTwo", "removeStudent"].forEach((id) => {
-    $(id).disabled = !s || !s.name;
+  [
+    "scoreMinus",
+    "scorePlus",
+    "scorePlusTwo",
+    "scorePlusFive",
+    "scorePlusTen",
+    "removeStudent",
+  ].forEach((id) => {
+    $(id).disabled = !s || !s.name || readOnly;
   });
   if (!s) {
     $("selectedName").textContent = "";
@@ -350,7 +365,7 @@ document.addEventListener(
     if (
       selected < 0 ||
       e.target.closest(
-        ".player, .character, .overlay, #gameDiary, #gameProject",
+        ".player, .character, .overlay, #registoOpen, #gameProject",
       )
     )
       return;
@@ -399,6 +414,7 @@ function floatingPoints(target, n) {
   }, 1050);
 }
 function addPoints(i, n) {
+  if (readOnly) return;
   const s = state.students[i];
   if (i < 0 || !s || !Number.isSafeInteger(s.points + n)) return;
   if (!activities.pushHistory("Ajuste individual", n, [i])) return;
@@ -440,6 +456,12 @@ $("scorePlus").onclick = function () {
 $("scorePlusTwo").onclick = function () {
   addPoints(selected, 2);
 };
+$("scorePlusFive").onclick = function () {
+  addPoints(selected, 5);
+};
+$("scorePlusTen").onclick = function () {
+  addPoints(selected, 10);
+};
 
 function updateHealth() {
   $("hpNumber").textContent = state.lives + " / 5";
@@ -450,6 +472,7 @@ function updateHealth() {
   });
 }
 function changeLife(amount) {
+  if (readOnly) return;
   const previous = state.lives;
   state.lives = Math.max(0, Math.min(5, state.lives + amount));
   const delta = state.lives - previous;
@@ -518,7 +541,7 @@ function openOverlay(id, focusId) {
   if (focusTarget) focusTarget.focus();
 }
 function closeOverlay(id) {
-  if (id === "diaryOverlay" && !diary.leaveDraft()) return;
+  if (id === "registoOverlay" && !diary.beforeClose()) return;
   if (id === "drawOverlay") {
     raffle.cancel();
     return;
@@ -586,7 +609,118 @@ function showHub() {
   hub.render();
   $(teacher.current() ? "createClass" : "teacherName").focus();
 }
-function enterClass(id) {
+// Controls that change data; disabled while a past lesson is read-only.
+const EDIT_CONTROLS = [
+  "className",
+  "editNames",
+  "activitiesOpen",
+  "lifeMinus",
+  "lifePlus",
+  "newLesson",
+  "draw",
+  "attention",
+  "masterAttention",
+  "studentName",
+  "studentGender",
+  "nextAvatar",
+  "selectAll",
+  "selectNone",
+  "makeTeams",
+];
+/** Open a day: today is editable; a past day starts read-only. */
+function setSessionDay(day) {
+  sessionDay = validDay(day) ? day : dayISO(new Date());
+  setReadOnly(sessionDay !== dayISO(new Date()));
+}
+function setReadOnly(flag) {
+  readOnly = flag;
+  const isToday = sessionDay === dayISO(new Date());
+  $("gameSessionDay").textContent =
+    "AULA DE " + dateLabel(sessionDay) + (isToday ? "" : " ⚠");
+  $("gameSessionDay").classList.toggle("not-today", !isToday);
+  $("sessionBanner").hidden = isToday;
+  $("sessionBanner").classList.toggle("editing", !readOnly);
+  $("sessionBannerText").textContent = readOnly
+    ? "📅 Aula de " + dateLabel(sessionDay) + " · só leitura"
+    : "✎ A editar a aula de " +
+      dateLabel(sessionDay) +
+      " · as alterações ficam nesse dia";
+  $("sessionEdit").hidden = !readOnly;
+  $("sessionEndEdit").hidden = readOnly || isToday;
+  EDIT_CONTROLS.forEach((id) => ($(id).disabled = readOnly));
+  $("nameForm").querySelector("button").disabled = readOnly;
+  $("gameMain").classList.toggle("read-only", readOnly);
+  if (cards.length) syncAll();
+}
+function startEditing() {
+  if (
+    !readOnly ||
+    !confirm(
+      "Editar a aula de " +
+        dateLabel(sessionDay) +
+        "?\nO que alterar fica gravado nesse dia.",
+    )
+  )
+    return false;
+  setReadOnly(false);
+  status("✎ A editar a aula de " + dateLabel(sessionDay));
+  return true;
+}
+$("sessionEdit").onclick = startEditing;
+$("sessionEndEdit").onclick = () => {
+  setReadOnly(true);
+  status("✓ Edição terminada. A aula voltou a ficar só de leitura.");
+};
+// ── Colour theme (a preference of this device, not part of backups) ──────
+let theme = "roxo";
+try {
+  theme = THEMES[localStorage.getItem(THEME_KEY)]
+    ? localStorage.getItem(THEME_KEY)
+    : "roxo";
+} catch {
+  // Storage blocked: keep the default theme.
+}
+function renderThemePicker() {
+  const root = $("themePicker");
+  root.textContent = "";
+  root.appendChild(element("span", "theme-label", "Tema"));
+  Object.entries(THEMES).forEach(([key, t]) => {
+    const b = element("button", "theme-choice");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(key === theme));
+    b.setAttribute("aria-label", "Tema " + t.label);
+    b.title = t.label;
+    t.swatch.forEach((color) => {
+      const dot = element("span", "theme-dot");
+      dot.style.background = color;
+      b.appendChild(dot);
+    });
+    b.appendChild(element("span", "", t.label));
+    b.onclick = () => setTheme(key);
+    root.appendChild(b);
+  });
+}
+function setTheme(key) {
+  theme = key;
+  try {
+    localStorage.setItem(THEME_KEY, key);
+  } catch {
+    // Not saved: the theme still applies now.
+  }
+  applyTheme(document, key);
+  if (presentation.window && !presentation.window.closed)
+    applyTheme(presentation.window.document, key);
+  renderThemePicker();
+}
+
+// Leaving a class: everything is already saved; offer a backup first.
+$("classesOpen").onclick = () => openOverlay("exitOverlay", "exitBackup");
+$("exitBackup").onclick = () => {
+  backupUI.backupNow();
+  showHub();
+};
+$("exitNoBackup").onclick = showHub;
+function enterClass(id, day = dayISO(new Date())) {
   if (!teacher.ensure()) return;
   const workspace = persistence.workspace,
     c = workspace.classes.find((c) => c.id === id);
@@ -601,6 +735,7 @@ function enterClass(id) {
   syncAll();
   teacher.refresh();
   backupUI.updateStatus();
+  setSessionDay(day);
   window.scrollTo(0, 0);
 }
 
@@ -621,6 +756,15 @@ const live = {
   get storageOK() {
     return persistence.storageOK;
   },
+  get sessionDay() {
+    return sessionDay;
+  },
+  get readOnly() {
+    return readOnly;
+  },
+  get theme() {
+    return theme;
+  },
 };
 function withLive(dependencies) {
   return Object.assign(Object.create(live), dependencies);
@@ -636,6 +780,7 @@ const teacher = createTeacher(
   withLive({
     $,
     dirty,
+    onSaved: () => hub.render(),
     onChange() {
       if (selected < 0) renderScene();
     },
@@ -694,6 +839,7 @@ const teams = createTeams(
 const activities = createActivities(
   withLive({
     $,
+    stamp: () => stampOn(sessionDay),
     element,
     dirty,
     syncAll,
@@ -727,6 +873,16 @@ const hub = createHub(
     updateBackupStatus: () => backupUI.updateStatus(),
   }),
 );
+createGradesUI(
+  withLive({
+    $,
+    element,
+    button,
+    openOverlay,
+    dirty,
+    requireTeacher: teacher.ensure,
+  }),
+);
 const diary = createDiary(
   withLive({
     $,
@@ -739,10 +895,18 @@ const diary = createDiary(
     closeOverlay,
     masterName: teacher.displayName,
     requireTeacher: teacher.ensure,
+    setSessionDay,
+    startEditing,
   }),
 );
 
 persistence.load();
+applyTheme(document, theme);
+renderThemePicker();
+// Installed app: works offline, and asks the browser not to clear the data.
+if ("serviceWorker" in navigator && location.protocol.startsWith("http"))
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+navigator.storage?.persist?.().catch(() => {});
 showHub();
 backupUI.updateStatus();
 if (persistence.storageBlocked)

@@ -1,9 +1,18 @@
 import { uid, validDate, integer, textField, validDay } from "./utils.js";
 import { emptyStudent } from "./students.js";
+import {
+  defaultGrading,
+  validateAssessments,
+  validateGrading,
+} from "./grading.js";
 
-/** Current workspace and backup format. Version 11 added student ids. */
-export const VERSION = 11;
-export const SUPPORTED_VERSIONS = [8, 9, 10, 11];
+/**
+ * Current workspace and backup format. Version 11 added student ids;
+ * version 12 added lesson marks, assessments and grading rules; version 13
+ * added the date, description and evaluation criteria of each assessment.
+ */
+export const VERSION = 13;
+export const SUPPORTED_VERSIONS = [8, 9, 10, 11, 12, 13];
 /** Class save in the legacy format (versions 1–6), normalized to version 6. */
 export function validate(raw) {
   if (
@@ -89,6 +98,7 @@ export function emptyWorkspace() {
     activeClassId: null,
     classes: [],
     presets: defaultPresets(),
+    grading: defaultGrading(),
     lastBackup: null,
   };
 }
@@ -176,6 +186,7 @@ export function validClass(raw) {
     });
   }
   c.diary = validateDiary(raw.diary);
+  c.assessments = validateAssessments(raw.assessments);
   c.diary.notes.forEach((n) => {
     n.studentId = n.slot === null ? null : studentIdFor(n);
   });
@@ -232,6 +243,7 @@ export function validateWorkspace(raw) {
     return { name: p.name, points: p.points };
   });
   validateTeachers(raw, w);
+  w.grading = validateGrading(raw.grading);
   w.revision = raw.revision;
   w.activeClassId = ids.has(raw.activeClassId) ? raw.activeClassId : null;
   if (raw.lastBackup) {
@@ -327,7 +339,18 @@ export function validateDiary(raw) {
           !integer(r.slot, 0, 29) ||
           slots.has(r.slot) ||
           !textField(r.name, 60) ||
-          !["unmarked", "present", "absent", "late"].includes(r.status) ||
+          !["unmarked", "present", "absent", "late", "excused"].includes(
+            r.status,
+          ) ||
+          !(
+            r.behavior === undefined ||
+            ["good", "regular", "poor"].includes(r.behavior)
+          ) ||
+          !(
+            r.participation === undefined ||
+            ["normal", "active", "low"].includes(r.participation)
+          ) ||
+          !(r.material === undefined || typeof r.material === "boolean") ||
           !textField(r.note, 1000) ||
           !["pending", "delivered", "missing", "excused"].includes(
             r.delivery,
@@ -344,6 +367,10 @@ export function validateDiary(raw) {
           note: r.note,
           delivery: r.delivery,
           awardId: r.awardId,
+          // Version 12 lesson marks; older rows get the defaults.
+          behavior: r.behavior || "good",
+          participation: r.participation || "normal",
+          material: r.material !== false,
         };
       });
     return {

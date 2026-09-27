@@ -7,6 +7,8 @@ import { integer, uid } from "./utils.js";
  */
 export function createTeacher(app) {
   const { $, dirty, onChange } = app;
+  // With a saved name, the profile form stays folded until "✎ Perfil".
+  let editing = false;
 
   function current() {
     const workspace = app.workspace,
@@ -56,8 +58,17 @@ export function createTeacher(app) {
     $("teacherAvatar").value = t?.avatar ?? 0;
     masterSprite($("teacherPreview"), t?.avatar ?? 0);
     masterSprite($("masterAvatar"), t?.avatar ?? 0);
+    masterSprite($("hubAvatar"), t?.avatar ?? 0);
+    $("teacherForm").hidden = !!t && !editing;
+    $("profileToggle").hidden = !t;
+    $("profileToggle").setAttribute("aria-expanded", String(editing));
     onChange();
   }
+  $("profileToggle").onclick = () => {
+    editing = !editing;
+    refresh();
+    if (editing) $("teacherName").focus();
+  };
 
   $("teacherAvatar").onchange = function () {
     masterSprite($("teacherPreview"), Number(this.value));
@@ -92,7 +103,9 @@ export function createTeacher(app) {
     Object.assign(teacher, { name, title, avatar });
     workspace.activeTeacherId = teacher.id;
     dirty();
+    editing = false;
     refresh();
+    app.onSaved?.();
     $("teacherError").textContent = app.storageOK
       ? ""
       : "O nome está nesta sessão, mas não foi possível guardá-lo no navegador. Exporta um backup.";

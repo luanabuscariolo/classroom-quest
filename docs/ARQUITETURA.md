@@ -28,7 +28,7 @@ Um workspace contém professores, turmas, atividades frequentes, revisão e meta
 
 ### Versões e compatibilidade
 
-O formato atual é a versão 11 (`VERSION` em `model.js`). São aceites saves de turma nas versões 1–6 e workspaces/backups nas versões 8–11; `model.js` converte-os sempre para o formato atual. A chave `tic-quest.workspace.v8` foi mantida para que os dados já gravados na mesma origem continuem a ser lidos. Versões antigas da aplicação não abrem backups da versão 11. Importar como cópias preserva as turmas atuais; substituir pede confirmação e descarrega antes um backup preventivo.
+O formato atual é a versão 13 (`VERSION` em `model.js`). São aceites saves de turma nas versões 1–6 e workspaces/backups nas versões 8–13; `model.js` converte-os sempre para o formato atual. A chave `tic-quest.workspace.v8` foi mantida para que os dados já gravados na mesma origem continuem a ser lidos. Versões antigas da aplicação não abrem backups de versões mais novas. Importar como cópias preserva as turmas atuais; substituir pede confirmação e descarrega antes um backup preventivo.
 
 Os antigos perfis de demonstração (IDs `master-*`) continuam nos backups, mas não preenchem o nome do professor.
 
@@ -43,13 +43,23 @@ Cada turma tem 30 posições fixas. Cada aluno com nome tem também um `id` que 
 
 A cópia `.previous` serve para recuperação: se a gravação principal não puder ser lida, abre-se a cópia anterior e a gravação automática fica suspensa. Não substitui um backup descarregado. Uma quota excedida ou armazenamento bloqueado deixa um aviso visível (`backup-ui.js`).
 
-## Rascunho do diário
+## Registo (diário da turma)
 
-`diary.js` controla o ecrã; as regras (numeração de aulas, quem pode receber pontos de TPC, ligação `awardId`) e os textos dos relatórios estão em `diary-data.js`, testados em `tests/diary.test.js`.
+O dia da aula (`sessionDay` em `app.js`) escolhe-se no ecrã das turmas: **▶ Aula de hoje** ou **📅 Aula passada**. Aplica-se a tudo o que se faz com a turma aberta: o Registo escreve na aula desse dia e os pontos ficam datados nesse dia (`stampOn`). Uma aula passada abre só de leitura (`readOnly`): os controlos que alteram dados (`EDIT_CONTROLS`, pontos, vidas, Registo) ficam desativados até "✎ Editar esta aula"; "✓ Terminar edição" ou sair da turma voltam a bloquear. `addPoints` e `changeLife` também recusam alterações em só leitura.
 
-Ao abrir uma turma, `prepareDayDraft()` copia o diário persistido antes de renderizar. Edições mudam o rascunho. `saveDayEdits()` confirma o rascunho no workspace e tenta a gravação local. Navegar ou fechar com alterações solicita guardar; cancelar conserva a edição.
+`diary.js` controla o ecrã ✎ Registo e usa a grelha de alunos de `lesson-log.js`. Não há rascunho nem botão "Guardar": cada toque grava logo e o texto grava 0,4 s depois da última tecla, por campo (`later`/`flush`). Mudar de separador, fechar ou esconder a página grava o que estiver pendente. Ao abrir, guarda-se uma cópia (alunos, histórico e diário da turma); **Cancelar** (ou Esc, via `beforeClose`) repõe essa cópia depois de confirmar, e **Salvar e sair** só fecha. Assim nada se perde se o aparelho desligar, e cancelar continua a desfazer tudo. O backup com um clique (`backupNow`) e a saída da turma estão no ecrã do jogo.
 
-Premiar TPC envolve o histórico/pontos da turma e o `awardId` no diário. O controlador guarda antes e depois dessa operação. Ao mudar este fluxo, teste também backup e reabertura: a validação exige que a ligação ao histórico exista.
+Numa aula há uma linha por aluno com presença, comportamento, participação, material, TPC e observação. O ecrã tem um separador por tipo de informação (Sumário, Presença, Comportamento, Participação, Material, TPC, Observação) e nenhuma informação aparece em dois sítios. As opções de cada marcação e os seus emojis estão em `MARKS` (`lesson-log.js`), usados também pela tabela de desempenho. A "nota geral sobre a turma" é a nota do dia sem aluno (`slot: null`) e vive no separador Observação. Notas por aluno de versões anteriores continuam no histórico.
+
+**TPC:** a entrega de uma TPC é marcada nas linhas da aula em que a TPC foi dada (não na aula em que se verifica). No separador TPC escolhe-se a TPC a verificar (por defeito, a que tem entrega nesse dia); as marcações e o prémio de pontos aplicam-se a essa aula.
+
+As regras (numeração de aulas, quem pode receber pontos de TPC, ligação `awardId`) e os textos dos relatórios estão em `diary-data.js`, testados em `tests/diary.test.js`. Premiar TPC altera os pontos e grava o `awardId`; a validação exige que a ligação ao histórico exista.
+
+## Notas do período (versão 12)
+
+Os registos guardam factos (presença, comportamento, participação, material, notas 0–100 dos trabalhos); a nota nunca é gravada. `grading.js` calcula-a a partir desses factos e das regras em `workspace.grading`, por isso as regras podem mudar a qualquer momento. o ✎ Registo grava cada marcação logo, diretamente no diário da turma; `grades-ui.js` (◆ Avaliação) edita trabalhos e regras. Nenhum destes ecrãs é copiado para a apresentação.
+
+Desde a versão 13, cada trabalho tem ficha própria: data, descrição e, se o professor quiser, critérios com pesos que somam 100. Com critérios, guarda-se a nota de cada critério (`marks`) e a nota do trabalho é calculada por `assessmentScore` (Σ nota × peso ÷ 100, só quando todos os critérios têm nota e os pesos somam 100); `scores` fica vazio, para a nota existir num só sítio.
 
 ## Apresentação
 
@@ -57,9 +67,17 @@ A apresentação recebe cópias do DOM do jogo e de overlays públicos permitido
 
 O DOM é atualizado de forma incremental para não reiniciar todas as animações. A roleta (`raffle.js`) usa um temporizador da apresentação quando ela existe, para continuar a girar com a janela principal minimizada, e regressa à janela principal ao fechá-la.
 
+## App instalável e offline
+
+`manifest.webmanifest` e `sw.js` (na raiz, para controlar todo o site) permitem instalar a aplicação e usá-la sem internet. O service worker usa primeiro a rede e guarda uma cópia; sem rede, serve a cópia. Ao acrescentar um ficheiro público, acrescente-o a `FILES` em `sw.js` (o teste `site.test.js` falha se faltar). `app.js` também pede ao navegador armazenamento persistente, para reduzir o risco de os dados serem apagados.
+
+## Temas
+
+`theme.js` recolore o CSS em tempo de execução: guarda as declarações originais de cada folha de estilo e, para cada tema, transforma cada cor por regras de teoria das cores (propriedades de texto e de superfície tratadas à parte; variáveis `--gold`… substituídas pelo valor antes de transformar). Por isso o CSS continua escrito só para o tema roxo e uma cor nova funciona em todos os temas. O tema é uma preferência do aparelho (`localStorage`, chave `tic-quest.theme`), não entra nos backups, e aplica-se também à janela de apresentação.
+
 ## Estilos
 
-As imagens estão em WebP. A ordem dos links é intencional: `styles.css`, `feedback.css`, `game.css`, `workspace.css`, `diary.css`. A divisão preserva a cascata do protótipo. `presentation.css` só é acrescentado à segunda janela. Ainda existem seletores sobrepostos; consolidá-los exige comparação visual.
+As imagens estão em WebP. A ordem dos links é intencional: `styles.css`, `feedback.css`, `game.css`, `workspace.css`, `diary.css`, `grades.css`. A divisão preserva a cascata do protótipo. `presentation.css` só é acrescentado à segunda janela. Ainda existem seletores sobrepostos; consolidá-los exige comparação visual.
 
 ## Acrescentar funcionalidades
 

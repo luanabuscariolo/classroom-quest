@@ -30,6 +30,8 @@ export function createTeams(app) {
           "aria-label",
           (n > 0 ? "Dar" : "Retirar") + " um ponto à equipa " + (i + 1),
         );
+        // Past lessons are read-only until "Editar esta aula".
+        b.disabled = app.readOnly;
         b.onclick = function () {
           if (!Number.isSafeInteger(g.points + n)) {
             alert("Pontuação fora do limite.");

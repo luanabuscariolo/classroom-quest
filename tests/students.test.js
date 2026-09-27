@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateWorkspace, emptyWorkspace } from "../src/model.js";
+import { validateWorkspace, emptyWorkspace, VERSION } from "../src/model.js";
 import { packageBackup, parseBackup } from "../src/backup.js";
 import { canUndo } from "../src/points.js";
 import { rewardableRows } from "../src/diary-data.js";
@@ -75,7 +75,7 @@ function version10() {
 
 test("migration gives students ids and links records whose name still matches", () => {
   const w = validateWorkspace(version10());
-  assert.equal(w.version, 11);
+  assert.equal(w.version, VERSION);
   const c = w.classes[0],
     [ana, bruno] = c.students;
   assert.ok(ana.id && bruno.id && ana.id !== bruno.id);

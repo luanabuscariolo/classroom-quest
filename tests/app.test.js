@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { STORE } from "../src/storage.js";
 import { validateWorkspace } from "../src/model.js";
 
-test("classroom, points, diary drafts, import and presentation work together", async () => {
+test("classroom, points, registo, import and presentation work together", async () => {
   const timers = new Set();
   const originalTimeout = globalThis.setTimeout,
     originalInterval = globalThis.setInterval;
@@ -95,41 +95,48 @@ test("classroom, points, diary drafts, import and presentation work together", a
     click("makeTeams");
     assert.equal(stored().classes[0].groups.length, 2);
     w.document.querySelector('[data-close="teamsOverlay"]').click();
-    click("gameDiary");
-    click("annotateToday");
-    assert.equal($("lessonTeacher").value, "Prof. Alex Teste");
-    assert.equal($("lessonTeacher").readOnly, true);
+    click("registoOpen");
+    assert.equal($("registoOverlay").hidden, false);
+    assert.match($("registoDay").textContent, /\d\d\/\d\d\/\d{4}/);
     input("lessonSummary", "Resumo privado");
-    assert.equal(stored().classes[0].diary.lessons.length, 0);
-    click("saveDiaryDay");
-    assert.equal(
-      stored().classes[0].diary.lessons[0].summary,
-      "Resumo privado",
-    );
     input("lessonHomework", "Ficha");
-    $("tabHomework").click();
-    const delivery = w.document.querySelector('[data-delivery="0"]');
-    delivery.value = "delivered";
-    delivery.dispatchEvent(new w.Event("change"));
+    // Switching tab saves text that is still waiting to be written.
+    click("registoTabHistory");
+    const lesson = stored().classes[0].diary.lessons[0];
+    assert.equal(lesson.summary, "Resumo privado");
+    assert.equal(lesson.teacher, "Prof. Alex Teste");
+    click("registoTabDay");
+    w.document.querySelector('#logLenses [data-lens="delivery"]').click();
+    assert.match($("homeworkTargetInfo").textContent, /“Ficha”/);
+    w.document
+      .querySelector('.log-card[data-slot="0"] [data-value="delivered"]')
+      .click();
     click("rewardHomework");
     assert.equal(stored().classes[0].students[0].points, 2);
     assert.doesNotThrow(() => validateWorkspace(stored()));
-    w.document.querySelector('[data-close="diaryOverlay"]').click();
-    click("gameDiary");
-    click("annotateToday");
+    click("registoSave");
+    assert.equal($("registoOverlay").hidden, true);
+    click("registoOpen");
     assert.equal($("lessonSummary").value, "Resumo privado");
-    click("diaryProject");
+    click("registoTabHistory");
+    w.document.querySelector("#dailyHistoryList .history-day").click();
+    assert.match($("dailyReportView").textContent, /Resumo privado/);
+    assert.match(
+      $("dailyReportView").textContent,
+      /Entregaram a TPC desta aula: Ana/,
+    );
+    click("registoSave");
+    click("gameProject");
     assert.ok(popup.document.querySelector('link[rel="stylesheet"]'));
     assert.equal(
       popup.document.body.textContent.includes("Resumo privado"),
       false,
     );
-    assert.equal(popup.document.querySelector("#diaryOverlay"), null);
+    assert.equal(popup.document.querySelector("#registoOverlay"), null);
     assert.equal(popup.document.querySelector("input"), null);
     assert.equal(popup.document.getElementById("newLesson"), null);
     popup.document.getElementById("lifeMinus").click();
     assert.equal(stored().classes[0].lives, 3);
-    w.document.querySelector('[data-close="diaryOverlay"]').click();
     click("load");
     input("importText", JSON.stringify(stored()));
     click("readPastedSave");

@@ -1,26 +1,37 @@
-import { uid, copy, dayISO, validDay, dateLabel, integer } from "./utils.js";
-import { emptyDiary } from "./model.js";
 import { canUndo } from "./points.js";
 import { downloadText } from "./dom.js";
-import { sameStudent } from "./students.js";
 import {
-  ATTENDANCE_LABELS,
-  DELIVERY_LABELS,
   awardHomework,
+  classNoteOn,
   createLesson,
   dailyReport,
   dayDates,
-  eventsOn,
-  lessonReport,
+  daySummary,
   rewardableRows,
-  wasRewarded,
 } from "./diary-data.js";
+import { MARKS, createLessonGrid } from "./lesson-log.js";
+import { dateLabel, dayISO, integer, uid } from "./utils.js";
+
+const WEEKDAYS = [
+  "domingo",
+  "segunda",
+  "terça",
+  "quarta",
+  "quinta",
+  "sexta",
+  "sábado",
+];
+function longDate(day) {
+  const [y, m, d] = day.split("-").map(Number);
+  return WEEKDAYS[new Date(y, m - 1, d).getDay()] + ", " + dateLabel(day);
+}
 
 /**
- * Diary screen: lessons, attendance, homework, private notes and daily
- * reports. Rules and report texts live in diary-data.js. Edits go to a draft
- * of the open class's diary until saveDayEdits() commits it.
- * Diary state is private; app getters follow class switches and restored backups.
+ * "Registo": the class diary of one day. The day is chosen once (on the class
+ * list, or "Editar este dia" in the history) and everything written here is
+ * saved at once into that day: students' marks and notes, summary,
+ * activities, homework and a general note. The history shows each day in a
+ * readable form. Texts and reports come from diary-data.js.
  */
 export function createDiary(app) {
   const {
@@ -33,301 +44,148 @@ export function createDiary(app) {
     openOverlay,
     closeOverlay,
     masterName,
+    requireTeacher,
   } = app;
-  let diaryClassId = null,
-    diaryLessonId = null,
-    diaryTab = "lesson",
-    calendarView = new Date(),
-    reportDay = null;
-  let dayDraft = null,
-    dayDraftClass = null,
-    dayPending = false,
-    dayMode = "home";
+  const pending = new Map();
+  let reportDay = null,
+    snapshot = null,
+    closing = false,
+    lens = "summary",
+    homeworkTargetId = null;
 
-  function diaryClass() {
-    return app.workspace.classes.find((c) => c.id === diaryClassId);
+  const day = () => app.sessionDay;
+  function lessonOn(c, date) {
+    return c.diary.lessons
+      .filter((l) => l.date === date)
+      .sort((a, b) => b.number - a.number)[0];
   }
-  function committedDiaryData(c) {
-    if (!c.diary) c.diary = emptyDiary();
-    return c.diary;
-  }
-  function lesson() {
-    const c = diaryClass();
-    return c && diaryData(c).lessons.find((l) => l.id === diaryLessonId);
-  }
-
-  function renderCalendar() {
-    const c = diaryClass();
-    if (!c) return;
-    const year = calendarView.getFullYear(),
-      month = calendarView.getMonth(),
-      root = $("calendarGrid");
-    root.textContent = "";
-    $("calendarMonth").textContent = calendarView.toLocaleDateString("pt-PT", {
-      month: "long",
-      year: "numeric",
-    });
-    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
-    for (let n = 0; n < offset; n++) root.appendChild(element("span"));
-    const dates = diaryData(c).lessons.map((l) => l.date);
-    for (let i = 1; i <= new Date(year, month + 1, 0).getDate(); i++) {
-      const date = dayISO(new Date(year, month, i));
-      const b = button(
-        String(i),
-        function () {
-          chooseDay(this.dataset.date);
-        },
-        "",
-      );
-      b.className =
-        "calendar-day" +
-        (dates.includes(date) ? " has-lesson" : "") +
-        (date === $("lessonDate").value ? " chosen-date" : "") +
-        (date === dayISO(new Date()) ? " today" : "");
-      b.dataset.date = date;
-      b.setAttribute(
-        "aria-label",
-        dateLabel(date) + (dates.includes(date) ? " · com aula" : ""),
-      );
-      b.setAttribute("aria-pressed", String(date === $("lessonDate").value));
-      root.appendChild(b);
+  /** The lesson of the chosen day; created when something is first written. */
+  function getLesson(create) {
+    const c = app.state;
+    let lesson = lessonOn(c, day());
+    if (!lesson && create) {
+      if (c.diary.lessons.length >= 2000) {
+        alert("Limite de 2000 aulas por turma.");
+        return null;
+      }
+      lesson = createLesson(c, c.diary, day(), masterName());
+      c.diary.lessons.push(lesson);
+      renderHeader();
     }
-    $("calendarStats").textContent =
-      diaryData(c).lessons.length +
-      " aulas registadas · dias com aula sublinhados a verde";
+    return lesson;
   }
-
-  $("lessonDate").onchange = function () {
-    if (!validDay(this.value)) {
-      this.value = dayISO(new Date());
-    }
-    chooseDay(this.value);
-  };
-  $("calendarToday").onclick = function () {
-    chooseDay(dayISO(new Date()));
-  };
-  $("monthPrev").onclick = function () {
-    calendarView = new Date(
-      calendarView.getFullYear(),
-      calendarView.getMonth() - 1,
-      1,
+  /** Homework deliveries are marked on the lesson where the TPC was set. */
+  function homeworkTarget() {
+    return (
+      app.state.diary.lessons.find((l) => l.id === homeworkTargetId) || null
     );
-    renderCalendar();
-  };
-  $("monthNext").onclick = function () {
-    calendarView = new Date(
-      calendarView.getFullYear(),
-      calendarView.getMonth() + 1,
-      1,
-    );
-    renderCalendar();
-  };
-  function loadDay() {
-    const c = diaryClass();
-    if (!c) return;
-    const lessons = diaryData(c)
-        .lessons.filter((l) => l.date === $("lessonDate").value)
-        .sort((a, b) => a.number - b.number),
-      root = $("lessonSelect");
-    root.textContent = "";
-    if (!lessons.length) {
-      const o = element("option", "", "Sem aula registada");
-      o.value = "";
-      root.appendChild(o);
-      diaryLessonId = null;
-    } else {
-      lessons.forEach((l) => {
-        const o = element("option", "", "Aula " + l.number + " · " + l.teacher);
-        o.value = l.id;
-        root.appendChild(o);
-      });
-      if (!lessons.some((l) => l.id === diaryLessonId))
-        diaryLessonId = lessons[0].id;
-      root.value = diaryLessonId;
-    }
-    renderLesson();
   }
-  $("lessonSelect").onchange = function () {
-    diaryLessonId = this.value;
-    renderLesson();
-  };
-  $("newDiaryLesson").onclick = function () {
-    const c = diaryClass(),
-      date = $("lessonDate").value;
-    if (!c || !validDay(date)) return;
-    const d = diaryData(c);
-    if (d.lessons.length >= 2000) {
-      alert("Limite de 2000 aulas por turma.");
-      return;
-    }
-    if (
-      d.lessons.some((l) => l.date === date) &&
-      !confirm("Já existe uma aula nesta data. Criar outra aula?")
-    )
-      return;
-    const l = createLesson(c, d, date, masterName());
-    d.lessons.push(l);
-    diaryLessonId = l.id;
-    diaryTab = "lesson";
-    saveDiary();
-    loadDay();
-    renderCalendar();
-    $("lessonSummary").focus();
-  };
-  function switchDiaryTab(tab) {
-    diaryTab = tab;
-    const l = lesson();
-    $("lessonPane").hidden = tab !== "lesson" || !l;
-    $("homeworkPane").hidden = tab !== "homework" || !l;
-    $("notesPane").hidden = tab !== "notes";
-    $("lessonEmpty").hidden = !!l || tab === "notes";
-    [
-      ["tabLesson", "lesson"],
-      ["tabHomework", "homework"],
-      ["tabNotes", "notes"],
-    ].forEach((pair) => {
-      $(pair[0]).setAttribute("aria-pressed", String(tab === pair[1]));
-    });
-    if (tab === "notes") renderNotes();
+  const grid = createLessonGrid({
+    $,
+    element,
+    dirty,
+    lessonFor: (key, create) =>
+      key === "delivery" ? homeworkTarget() : getLesson(create),
+    onChange(message) {
+      saved(message);
+      updateRewardButton();
+    },
+    get state() {
+      return app.state;
+    },
+    get readOnly() {
+      return app.readOnly;
+    },
+  });
+
+  function saved(message) {
+    $("registoSaved").textContent =
+      (message || "✓ Guardado") +
+      (app.storageOK
+        ? " · gravado neste aparelho"
+        : " · ⚠ sem gravação local: faça backup");
   }
-  $("tabLesson").onclick = function () {
-    switchDiaryTab("lesson");
-  };
-  $("tabHomework").onclick = function () {
-    switchDiaryTab("homework");
-  };
-  $("tabNotes").onclick = function () {
-    switchDiaryTab("notes");
-  };
-  function renderLesson() {
-    const l = lesson();
-    $("homeworkFeedback").textContent = "";
-    if (l) {
-      $("lessonNumber").value = l.number;
-      $("lessonTeacher").value = l.teacher;
-      $("lessonSummary").value = l.summary;
-      $("lessonActivities").value = l.activities;
-      $("lessonHomework").value = l.homework;
-      $("homeworkDue").value = l.due;
-      renderAttendance();
-      renderHomework();
-    }
-    switchDiaryTab(diaryTab);
-  }
-  [
+
+  // ── Texts of the day (saved as you type) ─────────────────────────────────
+  const FIELDS = [
     ["lessonSummary", "summary"],
     ["lessonActivities", "activities"],
     ["lessonHomework", "homework"],
-  ].forEach((pair) => {
-    $(pair[0]).oninput = function () {
-      const l = lesson();
-      if (!l) return;
-      l[pair[1]] = this.value;
-      saveDiary();
-      if (pair[1] === "homework") updateRewardButton();
+  ];
+  /** Save texts still waiting (typing is saved 0.4 s after the last key). */
+  function flush() {
+    const jobs = [...pending.values()];
+    pending.clear();
+    jobs.forEach((job) => {
+      clearTimeout(job.timer);
+      job.save();
+    });
+  }
+  function later(key, save) {
+    const previous = pending.get(key);
+    if (previous) clearTimeout(previous.timer);
+    const job = {
+      save,
+      timer: setTimeout(() => {
+        pending.delete(key);
+        save();
+      }, 400),
+    };
+    pending.set(key, job);
+  }
+  FIELDS.forEach(([id, key]) => {
+    $(id).oninput = function () {
+      const value = this.value;
+      later(key, () => {
+        const lesson = getLesson(true);
+        if (!lesson) return;
+        lesson[key] = value;
+        dirty();
+        saved();
+        if (key === "homework") fillHomeworkTargets();
+      });
     };
   });
-  $("lessonNumber").onchange = function () {
-    const l = lesson(),
-      v = Number(this.value);
-    if (!l) return;
-    if (!integer(v, 1, 10000)) {
-      this.value = l.number;
-      return;
-    }
-    l.number = v;
-    saveDiary();
-    loadDay();
-  };
   $("homeworkDue").onchange = function () {
-    const l = lesson();
-    if (!l) return;
-    if (this.value && !validDay(this.value)) {
-      this.value = l.due;
-      return;
-    }
-    l.due = this.value;
-    saveDiary();
+    const lesson = getLesson(true);
+    if (!lesson) return;
+    lesson.due = this.value || "";
+    dirty();
+    saved();
+    fillHomeworkTargets();
   };
-  function selectOptions(options, value, fn) {
-    const select = element("select", "field");
-    options.forEach((pair) => {
-      const o = element("option", "", pair[1]);
-      o.value = pair[0];
-      select.appendChild(o);
+  $("classNote").oninput = function () {
+    const value = this.value;
+    later("classNote", () => {
+      const c = app.state;
+      let note = classNoteOn(c.diary, day());
+      if (!note) {
+        if (!value.trim()) return;
+        if (c.diary.notes.length >= 10000) {
+          alert("Limite de notas atingido.");
+          return;
+        }
+        note = {
+          id: uid(),
+          date: day(),
+          text: "",
+          slot: null,
+          studentId: null,
+          name: "",
+        };
+        c.diary.notes.push(note);
+      }
+      note.text = value.slice(0, 6000);
+      dirty();
+      saved("✓ Nota da turma guardada");
     });
-    select.value = value;
-    select.onchange = fn;
-    return select;
-  }
-  function attendanceCounts() {
-    const l = lesson();
-    if (!l) return;
-    $("attendanceCount").textContent = Object.keys(ATTENDANCE_LABELS)
-      .map(
-        (k) =>
-          ATTENDANCE_LABELS[k] +
-          ": " +
-          l.attendance.filter((r) => r.status === k).length,
-      )
-      .join(" · ");
-  }
-  function renderAttendance() {
-    const l = lesson(),
-      root = $("attendanceList");
-    root.textContent = "";
-    l.attendance.forEach((r) => {
-      const row = element("div", "attendance-row"),
-        select = selectOptions(
-          Object.entries(ATTENDANCE_LABELS),
-          r.status,
-          function () {
-            r.status = this.value;
-            saveDiary();
-            attendanceCounts();
-          },
-        );
-      select.dataset.attendance = r.slot;
-      select.setAttribute("aria-label", "Presença de " + r.name);
-      const note = element("input", "field");
-      note.maxLength = 1000;
-      note.value = r.note;
-      note.placeholder = "Observação privada";
-      note.setAttribute("aria-label", "Observação de " + r.name);
-      note.oninput = function () {
-        r.note = this.value;
-        saveDiary();
-      };
-      row.append(element("strong", "", r.name), select, note);
-      root.appendChild(row);
-    });
-    attendanceCounts();
-  }
-  $("allPresent").onclick = function () {
-    const l = lesson();
-    if (!l) return;
-    const marked = l.attendance.some(
-      (r) => r.status === "absent" || r.status === "late",
-    );
-    if (
-      marked &&
-      !confirm("Substituir também as faltas e os atrasos já marcados?")
-    )
-      return;
-    l.attendance.forEach((r) => {
-      r.status = "present";
-    });
-    saveDiary();
-    renderAttendance();
   };
-  function rewardable() {
-    const c = diaryClass(),
-      l = lesson();
-    return c && l ? rewardableRows(c, l) : [];
-  }
+
+  // ── Homework points ──────────────────────────────────────────────────────
   function updateRewardButton() {
-    const l = lesson(),
-      n = rewardable().length,
+    const c = app.state,
+      lesson = homeworkTarget(),
+      n = lesson ? rewardableRows(c, lesson).length : 0,
       points = Number($("homeworkPoints").value);
     $("rewardHomework").textContent =
       "★ Dar +" +
@@ -337,454 +195,343 @@ export function createDiary(app) {
       " entrega" +
       (n === 1 ? "" : "s");
     $("rewardHomework").disabled =
-      !l || !l.homework.trim() || !n || !integer(points, 1, 1000);
-  }
-  function renderHomework() {
-    const c = diaryClass(),
-      l = lesson(),
-      root = $("homeworkList");
-    root.textContent = "";
-    l.attendance.forEach((r) => {
-      const row = element("div", "attendance-row"),
-        select = selectOptions(
-          Object.entries(DELIVERY_LABELS),
-          r.delivery,
-          function () {
-            r.delivery = this.value;
-            saveDiary();
-            renderHomework();
-          },
-        );
-      select.dataset.delivery = r.slot;
-      select.setAttribute("aria-label", "Entrega de " + r.name);
-      const info = wasRewarded(c, r)
-        ? "✓ Pontos atribuídos"
-        : !sameStudent(c, r)
-          ? "Aluno removido da turma; pontos bloqueados"
-          : "";
-      row.append(
-        element("strong", "", r.name),
-        select,
-        element("small", "diary-hint", info),
-      );
-      root.appendChild(row);
-    });
-    updateRewardButton();
+      !lesson || !lesson.homework.trim() || !n || !integer(points, 1, 1000);
   }
   $("homeworkPoints").oninput = updateRewardButton;
-  function awardDeliveredHomework() {
-    const c = diaryClass(),
-      l = lesson(),
-      rows = rewardable(),
+  $("rewardHomework").onclick = function () {
+    flush();
+    const c = app.state,
+      lesson = homeworkTarget(),
       points = Number($("homeworkPoints").value);
-    if (!l || !l.homework.trim() || !rows.length || !integer(points, 1, 1000))
+    if (!lesson) return;
+    const rows = rewardableRows(c, lesson);
+    if (!rows.length || !lesson.homework.trim() || !integer(points, 1, 1000))
       return;
-    if (!awardHomework(c, l, rows, points)) {
+    if (!awardHomework(c, lesson, rows, points)) {
       alert("Não é possível adicionar este lançamento.");
       return;
     }
-    saveDiary();
-    if (app.state.id === c.id) syncAll();
-    renderHomework();
+    dirty();
+    syncAll();
+    playSound("point");
     $("homeworkFeedback").textContent =
       "✓ " +
       rows.length +
-      " entregas premiadas. Podes desfazer no Histórico por dia.";
-    playSound("point");
-  }
-  function fillNoteTargets() {
-    const c = diaryClass(),
-      root = $("noteTarget");
-    root.textContent = "";
-    const o = element("option", "", "Turma · notas gerais");
-    o.value = "class";
-    root.appendChild(o);
-    c.students.forEach((s, i) => {
-      if (s.name) {
-        const o = element("option", "", s.name);
-        o.value = i;
-        root.appendChild(o);
-      }
-    });
-    const previousSlots = new Set(c.students.map((s, i) => (s.name ? i : -1)));
-    diaryData(c).notes.forEach((n) => {
-      if (n.slot !== null && !previousSlots.has(n.slot)) {
-        const o = element("option", "", n.name + " · registo anterior");
-        o.value = n.slot;
-        root.appendChild(o);
-        previousSlots.add(n.slot);
-      }
-    });
-    renderNotes();
-  }
-  $("noteTarget").onchange = renderNotes;
-  function renderNotes() {
-    const c = diaryClass();
-    if (!c) return;
-    const target = $("noteTarget").value,
-      slot = target === "class" ? null : Number(target),
-      root = $("notesList");
-    root.textContent = "";
-    const notes = diaryData(c)
-      .notes.filter((n) => n.slot === slot)
-      .slice()
-      .sort((a, b) => b.date.localeCompare(a.date));
-    notes.forEach((n) => {
-      const box = element("article", "private-note");
-      box.appendChild(
-        element(
-          "small",
-          "",
-          dateLabel(n.date) + " · " + (n.slot === null ? "Turma" : n.name),
-        ),
-      );
-      const text = element("textarea", "field");
-      text.rows = 3;
-      text.maxLength = 6000;
-      text.value = n.text;
-      text.setAttribute("aria-label", "Nota de " + dateLabel(n.date));
-      text.oninput = function () {
-        n.text = this.value;
-        saveDiary();
-      };
-      box.appendChild(text);
-      box.appendChild(
-        button(
-          "Eliminar nota",
-          () => {
-            if (!confirm("Eliminar esta anotação?")) return;
-            diaryData(c).notes = diaryData(c).notes.filter(
-              (x) => x.id !== n.id,
-            );
-            saveDiary();
-            renderNotes();
-          },
-          "small",
-        ),
-      );
-      root.appendChild(box);
-    });
-    if (!notes.length)
-      root.appendChild(element("p", "diary-hint", "Sem anotações."));
-  }
-  $("noteForm").onsubmit = function (e) {
-    e.preventDefault();
-    const c = diaryClass(),
-      text = $("noteText").value.trim(),
-      date = $("noteDate").value;
-    if (!c || !text || !validDay(date)) return;
-    if (diaryData(c).notes.length >= 10000) {
-      alert("Limite de notas atingido.");
-      return;
-    }
-    const target = $("noteTarget").value,
-      slot = target === "class" ? null : Number(target);
-    diaryData(c).notes.push({
-      id: uid(),
-      date,
-      text: text.slice(0, 6000),
-      slot,
-      studentId: slot === null ? null : c.students[slot].id,
-      name: slot === null ? "" : c.students[slot].name,
-    });
-    $("noteText").value = "";
-    saveDiary();
-    renderNotes();
+      " entregas premiadas. Pode desfazer no Histórico por dia.";
+    updateRewardButton();
   };
-  function copyForSchool(text) {
+
+  function copyText(text) {
     if (!text) {
-      $("diaryFeedback").textContent = "Ainda não há texto para copiar.";
+      saved("Ainda não há texto para copiar.");
       return;
     }
-    function fallback() {
+    const fallback = () => {
       openOverlay("copyOverlay", "copyText");
       $("copyText").value = text;
       $("copyText").select();
-    }
+    };
     if (navigator.clipboard && navigator.clipboard.writeText)
-      navigator.clipboard.writeText(text).then(() => {
-        $("diaryFeedback").textContent = "✓ Texto copiado.";
-      }, fallback);
+      navigator.clipboard
+        .writeText(text)
+        .then(() => saved("✓ Texto copiado"), fallback);
     else fallback();
   }
-  $("copySummary").onclick = function () {
-    const l = lesson();
-    if (l) copyForSchool(l.summary);
-  };
-  $("copyHomework").onclick = function () {
-    const l = lesson();
-    if (l)
-      copyForSchool(
-        l.homework + (l.due ? "\nEntrega: " + dateLabel(l.due) : ""),
-      );
-  };
-  function currentLessonReport(privateNotes) {
-    const c = diaryClass(),
-      l = lesson();
-    return l ? lessonReport(c, diaryData(c), l, privateNotes) : "";
-  }
-  $("exportLesson").onclick = function () {
-    const l = lesson();
-    if (!l) return;
-    downloadText(
-      currentLessonReport($("exportPrivate").checked),
-      "TIC_Aula_" + l.date + "_" + l.number + ".txt",
+  $("copySummary").onclick = () => copyText($("lessonSummary").value);
+  $("copyHomework").onclick = () =>
+    copyText(
+      $("lessonHomework").value +
+        ($("homeworkDue").value
+          ? "\nEntrega: " + dateLabel($("homeworkDue").value)
+          : ""),
     );
-  };
-  function diaryData(c) {
-    return dayDraft && c.id === dayDraftClass
-      ? dayDraft
-      : committedDiaryData(c);
+
+  // ── Day tab ──────────────────────────────────────────────────────────────
+  function renderHeader() {
+    const c = app.state,
+      lesson = lessonOn(c, day()),
+      isToday = day() === dayISO(new Date());
+    $("registoClass").textContent = c.className + " · " + masterName();
+    $("registoDay").textContent =
+      (lesson ? "Aula " + lesson.number + " · " : "") + longDate(day());
+    $("registoDay").classList.toggle("not-today", !isToday);
+    $("registoToday").hidden = isToday;
   }
-  function saveDiary() {
-    dayPending = true;
-    $("diarySaved").textContent = "● Alterações por guardar";
-    $("saveDiaryDay").disabled = false;
-  }
-  function prepareDayDraft() {
-    const c = diaryClass();
-    dayDraft = c ? copy(committedDiaryData(c)) : null;
-    dayDraftClass = c ? c.id : null;
-    dayPending = false;
-    $("saveDiaryDay").disabled = true;
-  }
-  function saveDayEdits() {
-    const c = diaryClass();
-    if (!c) return;
-    if ($("noteText").value.trim() && dayMode === "edit")
-      $("noteForm").dispatchEvent(
-        new Event("submit", { bubbles: true, cancelable: true }),
-      );
-    if (dayPending) {
-      c.diary = copy(dayDraft);
-      dirty();
-      dayPending = false;
-      $("saveDiaryDay").disabled = true;
-    }
-    $("diarySaved").textContent = app.storageOK
-      ? "✓ Dia guardado no navegador · incluído no próximo backup"
-      : "⚠ Sem gravação local. Exporta um backup antes de fechar.";
-  }
-  function leaveDraft() {
-    if (!dayPending && !$("noteText").value.trim()) return true;
-    if (!confirm("Guardar as alterações antes de continuar?")) return false;
-    saveDayEdits();
-    return true;
-  }
-  function setDayMode(mode) {
-    dayMode = mode;
-    $("diaryStart").hidden = mode !== "home";
-    $("dailyHistory").hidden = mode !== "history";
-    $("dailyReport").hidden = mode !== "report";
-    $("diaryBody").hidden = mode !== "edit" || !diaryClass();
-    $("dailyEditBar").hidden = mode !== "edit";
-    $("dailyNavigation").hidden = !diaryClass();
-    if (mode === "history") renderDailyHistory();
+  function renderDay() {
+    const c = app.state,
+      lesson = lessonOn(c, day());
+    renderHeader();
+    FIELDS.forEach(([id, key]) => ($(id).value = lesson ? lesson[key] : ""));
+    $("homeworkDue").value = lesson ? lesson.due : "";
+    const note = classNoteOn(c.diary, day());
+    $("classNote").value = note ? note.text : "";
+    $("homeworkFeedback").textContent = "";
+    setLens(lens);
   }
 
-  function openDiary() {
-    if (!app.requireTeacher()) return;
-    const options = $("diaryClass");
-    options.textContent = "";
-    app.workspace.classes.forEach((c) => {
+  // ── Tabs of the day: Sumário, the marks, TPC and Observação ─────────────
+  const LENS_TABS = [
+    ["summary", "📝 Sumário"],
+    ...Object.entries(MARKS).map(([key, def]) => [
+      key,
+      def.options[0][1] + " " + def.label,
+    ]),
+    ["note", "💬 Observação"],
+  ];
+  function setLens(key) {
+    lens = key;
+    const bar = $("logLenses");
+    bar.textContent = "";
+    LENS_TABS.forEach(([k, label]) => {
+      const b = element("button", "button", label);
+      b.type = "button";
+      b.dataset.lens = k;
+      b.setAttribute("aria-pressed", String(k === lens));
+      b.onclick = () => {
+        flush();
+        setLens(k);
+      };
+      bar.appendChild(b);
+    });
+    $("summaryPanel").hidden = lens !== "summary";
+    $("homeworkPanel").hidden = lens !== "delivery";
+    $("homeworkReward").hidden = lens !== "delivery";
+    $("notePanel").hidden = lens !== "note";
+    if (lens === "delivery") fillHomeworkTargets();
+    else grid.render(lens);
+    applyReadOnly();
+  }
+  /**
+   * TPC to check: every TPC set up to this day. By default the one due today,
+   * else the latest set before today, else today's.
+   */
+  function fillHomeworkTargets() {
+    const c = app.state,
+      list = c.diary.lessons
+        .filter((l) => l.homework.trim() && l.date <= day())
+        .sort((a, b) => b.date.localeCompare(a.date) || b.number - a.number),
+      select = $("homeworkTarget");
+    select.textContent = "";
+    if (!list.some((l) => l.id === homeworkTargetId))
+      homeworkTargetId = (
+        list.find((l) => l.due === day()) ||
+        list.find((l) => l.date < day()) ||
+        list[0] || { id: null }
+      ).id;
+    list.forEach((l) => {
       const o = element(
         "option",
         "",
-        c.className + (c.archived ? " · arquivada" : ""),
+        "Dada a " +
+          dateLabel(l.date) +
+          " · " +
+          l.homework.slice(0, 50) +
+          (l.due ? " · entrega " + dateLabel(l.due) : ""),
       );
-      o.value = c.id;
-      options.appendChild(o);
+      o.value = l.id;
+      select.appendChild(o);
     });
-    diaryClassId = app.workspace.classes.some(
-      (c) => c.id === app.workspace.activeClassId,
-    )
-      ? app.workspace.activeClassId
-      : app.workspace.classes[0]?.id;
-    options.value = diaryClassId || "";
-    prepareDayDraft();
-    $("lessonDate").value = dayISO(new Date());
-    calendarView = new Date();
-    diaryLessonId = null;
-    diaryTab = "lesson";
-    $("diaryFeedback").textContent = "";
-    $("exportPrivate").checked = false;
-    $("diaryEmpty").hidden = !!diaryClass();
-    $("diaryBody").hidden = !diaryClass();
-    $("noteText").value = "";
-    $("diarySaved").textContent = app.storageOK
-      ? "Escolhe anotar ou consultar um dia"
-      : "⚠ Gravação local indisponível";
-    if (diaryClass()) {
-      renderCalendar();
-      loadDay();
-      fillNoteTargets();
-      $("noteDate").value = $("lessonDate").value;
+    select.disabled = !list.length;
+    if (!list.length) {
+      select.appendChild(element("option", "", "Ainda não há TPC registada"));
+      $("homeworkTargetInfo").textContent =
+        "Escreva a nova TPC acima. As entregas verificam-se aqui, na aula do prazo.";
+    } else {
+      select.value = homeworkTargetId;
+      const l = homeworkTarget();
+      $("homeworkTargetInfo").textContent =
+        "As marcações abaixo referem-se à TPC dada a " +
+        dateLabel(l.date) +
+        (l.due ? ", com entrega até " + dateLabel(l.due) : "") +
+        ": “" +
+        l.homework +
+        "”.";
     }
-    openOverlay("diaryOverlay", "diaryClass");
-
-    setDayMode("home");
+    grid.render("delivery");
+    // Without a TPC there is nothing to mark yet.
+    if (!list.length) $("logGrid").hidden = true;
+    updateRewardButton();
+    applyReadOnly();
   }
-  $("hubDiary").onclick = openDiary;
-  $("gameDiary").onclick = openDiary;
-  $("diaryClass").onchange = function () {
-    const next = this.value;
-    if (!leaveDraft()) {
-      this.value = diaryClassId;
-      return;
-    }
-    diaryClassId = next;
-    prepareDayDraft();
-    diaryLessonId = null;
-    loadDay();
-    renderCalendar();
-    fillNoteTargets();
-    $("noteText").value = "";
-    setDayMode("home");
-  };
-  function startDailyEdit(date) {
-    if (!leaveDraft()) return;
-    chooseDay(date);
-    setDayMode("edit");
-    if (!lesson()) $("newDiaryLesson").click();
-    $("noteDate").value = date;
-    renderCalendar();
+  /** Past lesson not being edited: everything can be read, nothing changed. */
+  function applyReadOnly() {
+    const ro = app.readOnly;
+    $("registoDayPane")
+      .querySelectorAll("input, textarea, .log-choice, #rewardHomework")
+      .forEach((el) => (el.disabled = ro));
+    $("registoReadOnly").hidden = !ro;
+    $("registoEdit").hidden = !ro;
+    $("registoSave").hidden = ro;
+    $("registoCancel").textContent = ro ? "Fechar" : "Cancelar";
   }
-  $("annotateToday").onclick = function () {
-    startDailyEdit(dayISO(new Date()));
+  $("registoEdit").onclick = () => {
+    if (!app.startEditing()) return;
+    snapshot = snapshotOf();
+    setTab("day");
   };
-  $("annotateDate").onclick = function () {
-    const date = $("dailyDate").value;
-    if (validDay(date)) startDailyEdit(date);
-  };
-  $("dailyDate").value = dayISO(new Date());
-  $("dailyHome").onclick = function () {
-    if (leaveDraft()) setDayMode("home");
-  };
-  $("showDailyHistory").onclick = function () {
-    if (leaveDraft()) setDayMode("history");
-  };
-  $("startHistory").onclick = function () {
-    if (leaveDraft()) setDayMode("history");
-  };
-  $("saveDiaryDay").onclick = saveDayEdits;
-  $("showWholeDay").onclick = function () {
-    saveDayEdits();
-    renderWholeDay($("lessonDate").value);
+  $("homeworkTarget").onchange = function () {
+    homeworkTargetId = this.value;
+    $("homeworkFeedback").textContent = "";
+    fillHomeworkTargets();
   };
 
-  $("rewardHomework").onclick = function () {
-    saveDayEdits();
-    awardDeliveredHomework();
-    saveDayEdits();
-  };
-  function renderDailyHistory() {
-    const c = diaryClass(),
-      root = $("dailyHistoryList");
+  // ── History tab ──────────────────────────────────────────────────────────
+  function setTab(tab) {
+    flush();
+    $("registoTabDay").setAttribute("aria-pressed", String(tab === "day"));
+    $("registoTabHistory").setAttribute("aria-pressed", String(tab !== "day"));
+    $("registoDayPane").hidden = tab !== "day";
+    $("registoHistoryPane").hidden = tab === "day";
+    if (tab === "day") renderDay();
+    else showHistoryList();
+  }
+  function showHistoryList() {
+    $("dailyHistoryList").hidden = false;
+    $("historyFilterBar").hidden = false;
+    $("dailyReport").hidden = true;
+    const c = app.state,
+      root = $("dailyHistoryList"),
+      filter = $("historyDateFilter").value;
     root.textContent = "";
-    if (!c) return;
-    const filter = $("historyDateFilter").value;
-    let dates = dayDates(c, diaryData(c));
+    let dates = dayDates(c, c.diary);
     if (filter) dates = dates.filter((d) => d === filter);
     if (!dates.length) {
-      root.appendChild(element("p", "", "Sem registos nesta data."));
+      root.appendChild(element("p", "diary-hint", "Sem registos nesta data."));
       return;
     }
     dates.forEach((date) => {
-      const d = diaryData(c),
-        lessons = d.lessons.filter((l) => l.date === date),
-        notes = d.notes.filter((n) => n.date === date),
-        events = eventsOn(c, date),
-        card = element("article", "daily-card");
+      const s = daySummary(c, c.diary, date),
+        absences = s.lessons.reduce(
+          (n, l) =>
+            n + (l.groups.find(([k]) => k === "Faltas")?.[1].length || 0),
+          0,
+        ),
+        card = button("", () => showDay(date), "daily-card history-day");
       card.append(
-        element("h3", "", dateLabel(date)),
+        element("strong", "", longDate(date)),
         element(
-          "p",
-          "",
-          lessons.length +
-            " aulas · " +
-            notes.length +
-            " notas · " +
-            events.length +
-            " lançamentos de pontos",
-        ),
-      );
-      card.appendChild(
-        button(
-          "Ver dia completo",
-          () => {
-            renderWholeDay(date);
-          },
-          "mint",
-        ),
-      );
-      card.appendChild(
-        button(
-          "Editar anotações",
-          () => {
-            startDailyEdit(date);
-          },
-          "",
+          "span",
+          "diary-hint",
+          [
+            s.lessons.length
+              ? "Aula " + s.lessons.map((l) => l.lesson.number).join(", ")
+              : "",
+            s.lessons[0]?.lesson.summary
+              ? "“" + s.lessons[0].lesson.summary.slice(0, 80) + "”"
+              : "",
+            absences ? absences + " falta(s)" : "",
+            s.events.length ? s.events.length + " lançamento(s) de pontos" : "",
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Só notas",
         ),
       );
       root.appendChild(card);
     });
   }
-  $("historyDateFilter").oninput = renderDailyHistory;
-  $("clearHistoryFilter").onclick = function () {
-    $("historyDateFilter").value = "";
-    renderDailyHistory();
-  };
-  function dailyPlainText(c, date) {
-    return dailyReport(c, diaryData(c), date);
+  function section(title, content) {
+    const box = element("section", "day-section");
+    box.appendChild(element("h4", "", title));
+    if (typeof content === "string")
+      box.appendChild(element("p", "day-text", content));
+    else box.appendChild(content);
+    return box;
   }
-
-  $("editReportDay").onclick = function () {
-    startDailyEdit(reportDay);
-  };
-  $("dailyReportBack").onclick = function () {
-    setDayMode("history");
-  };
-  $("copyWholeDay").onclick = function () {
-    copyForSchool(dailyPlainText(diaryClass(), reportDay));
-  };
-  $("exportWholeDay").onclick = function () {
-    downloadText(
-      dailyPlainText(diaryClass(), reportDay),
-      "TIC_Dia_" + reportDay + ".txt",
-    );
-  };
-  // The points tool stays quick; its history routes to the same daily record.
-  $("historyTab").onclick = function () {
-    closeOverlay("activitiesOverlay");
-    openDiary();
-    setDayMode("history");
-  };
-
-  function renderWholeDay(date) {
+  function namesList(items) {
+    const list = element("ul", "day-groups");
+    items.forEach(([label, text]) => {
+      const li = element("li");
+      li.append(element("strong", "", label), document.createTextNode(text));
+      list.appendChild(li);
+    });
+    return list;
+  }
+  function showDay(date) {
     reportDay = date;
-    setDayMode("report");
-    $("dailyReportTitle").textContent =
-      diaryClass().className + " · " + dateLabel(date);
-    $("dailyReportText").textContent = dailyPlainText(diaryClass(), date);
-    $("diaryOverlay").querySelector(".diary-modal").scrollTop = 0;
-
-    const c = diaryClass(),
-      root = $("dailyPointEvents");
-    root.textContent = "";
-    eventsOn(c, date)
-      .filter((h) => !h.undoneAt)
-      .forEach((h) => {
-        const line = element("div", "daily-card");
-        line.appendChild(
-          element(
-            "strong",
-            "",
-            h.title + " · " + (h.points > 0 ? "+" : "") + h.points + " ★",
+    const c = app.state,
+      s = daySummary(c, c.diary, date),
+      view = $("dailyReportView");
+    $("dailyHistoryList").hidden = true;
+    $("historyFilterBar").hidden = true;
+    $("dailyReport").hidden = false;
+    $("dailyReportTitle").textContent = c.className + " · " + longDate(date);
+    view.textContent = "";
+    s.lessons.forEach(({ lesson, present, groups, observations }) => {
+      const card = element("article", "daily-card day-card");
+      card.appendChild(
+        element("h3", "", "Aula " + lesson.number + " · " + lesson.teacher),
+      );
+      card.appendChild(section("Sumário", lesson.summary || "—"));
+      card.appendChild(section("Atividades", lesson.activities || "—"));
+      card.appendChild(
+        section(
+          "TPC",
+          (lesson.homework || "—") +
+            (lesson.due ? "\nEntrega até " + dateLabel(lesson.due) : ""),
+        ),
+      );
+      card.appendChild(
+        section(
+          "Alunos",
+          namesList([
+            [
+              "",
+              present + " de " + lesson.attendance.length + " alunos presentes",
+            ],
+            ...groups.map(([label, names]) => [label + ": ", names.join(", ")]),
+          ]),
+        ),
+      );
+      if (observations.length)
+        card.appendChild(
+          section(
+            "Observações",
+            namesList(observations.map((o) => [o.name + ": ", o.text])),
           ),
         );
-        line.appendChild(
-          element("p", "", h.recipients.map((r) => r.name).join(", ")),
-        );
+      view.appendChild(card);
+    });
+    if (s.classNotes.length || s.studentNotes.length) {
+      const card = element("article", "daily-card day-card");
+      s.classNotes.forEach((n) =>
+        card.appendChild(section("Nota geral sobre a turma", n.text)),
+      );
+      s.studentNotes.forEach((n) =>
+        card.appendChild(section("Nota sobre " + n.name, n.text)),
+      );
+      view.appendChild(card);
+    }
+    if (!view.children.length)
+      view.appendChild(
+        element("p", "diary-hint", "Neste dia só há pontos lançados."),
+      );
+    renderPointEvents(date);
+  }
+  function renderPointEvents(date) {
+    const c = app.state,
+      root = $("dailyPointEvents");
+    root.textContent = "";
+    const events = daySummary(c, c.diary, date).events;
+    if (!events.length) return;
+    root.appendChild(element("h4", "", "Pontos lançados neste dia"));
+    events.forEach((h) => {
+      const line = element("div", "daily-card" + (h.undoneAt ? " undone" : ""));
+      line.appendChild(
+        element(
+          "strong",
+          "",
+          (h.undoneAt ? "[ANULADO] " : "") +
+            h.title +
+            " · " +
+            (h.points > 0 ? "+" : "") +
+            h.points +
+            " ★",
+        ),
+      );
+      line.appendChild(
+        element("p", "", h.recipients.map((r) => r.name).join(", ")),
+      );
+      if (!h.undoneAt)
         line.appendChild(
           button(
             "Desfazer pontos",
@@ -801,38 +548,110 @@ export function createDiary(app) {
               });
               h.undoneAt = new Date().toISOString();
               dirty();
-              if (app.state.id === c.id) syncAll();
-              renderWholeDay(date);
+              syncAll();
+              showDay(date);
             },
             "small",
           ),
         );
-        root.appendChild(line);
-      });
+      root.appendChild(line);
+    });
   }
-  $("noteText").addEventListener("input", function () {
-    if (this.value.trim()) saveDiary();
-  });
+  $("historyDateFilter").oninput = showHistoryList;
+  $("clearHistoryFilter").onclick = () => {
+    $("historyDateFilter").value = "";
+    showHistoryList();
+  };
+  $("dailyReportBack").onclick = showHistoryList;
+  $("editReportDay").onclick = () => {
+    app.setSessionDay(reportDay);
+    grid.reset();
+    homeworkTargetId = null;
+    setTab("day");
+  };
+  $("copyWholeDay").onclick = () =>
+    copyText(dailyReport(app.state, app.state.diary, reportDay));
+  $("exportWholeDay").onclick = () =>
+    downloadText(
+      dailyReport(app.state, app.state.diary, reportDay),
+      "TIC_Dia_" + reportDay + ".txt",
+    );
 
-  function chooseDay(date) {
-    if (!leaveDraft()) return;
-
-    if (!validDay(date)) return;
-    $("lessonDate").value = date;
-    calendarView = new Date(date + "T12:00:00");
-    diaryLessonId = null;
-    loadDay();
-    renderCalendar();
-    $("noteDate").value = date;
-    renderNotes();
+  // ── Open, backup and exit ────────────────────────────────────────────────
+  function open(tab = "day") {
+    if (!requireTeacher()) return;
+    grid.reset();
+    lens = "summary";
+    homeworkTargetId = null;
+    snapshot = snapshotOf();
+    $("registoSaved").textContent =
+      "Tudo o que escrever fica gravado neste dia.";
+    $("historyDateFilter").value = "";
+    openOverlay("registoOverlay", "registoTabDay");
+    setTab(tab);
   }
-
-  window.addEventListener("beforeunload", (e) => {
-    if (dayPending) {
-      e.preventDefault();
-      e.returnValue = "";
+  $("registoOpen").onclick = () => open("day");
+  // "Histórico por dia" in the points window opens this history.
+  $("historyTab").onclick = () => {
+    closeOverlay("activitiesOverlay");
+    open("history");
+  };
+  $("registoTabDay").onclick = () => setTab("day");
+  $("registoTabHistory").onclick = () => setTab("history");
+  $("registoToday").onclick = () => {
+    flush();
+    app.setSessionDay(dayISO(new Date()));
+    homeworkTargetId = null;
+    setTab("day");
+  };
+  // Cancel: everything is written as you go (so nothing is lost if the
+  // tablet switches off), and "Cancelar" puts back what was there on opening.
+  function snapshotOf() {
+    const c = app.state;
+    return JSON.stringify({
+      students: c.students,
+      history: c.history,
+      diary: c.diary,
+    });
+  }
+  function changed() {
+    flush();
+    return snapshot !== null && snapshotOf() !== snapshot;
+  }
+  function discard() {
+    Object.assign(app.state, JSON.parse(snapshot));
+    dirty();
+    syncAll();
+  }
+  /** Called for every close (buttons and Escape); false keeps it open. */
+  function beforeClose() {
+    if (closing || !changed()) {
+      snapshot = null;
+      return true;
     }
-  });
+    if (
+      !confirm(
+        "Sair sem salvar?\nAs alterações feitas agora no Registo serão descartadas.",
+      )
+    )
+      return false;
+    discard();
+    snapshot = null;
+    return true;
+  }
+  function finish() {
+    closing = true;
+    closeOverlay("registoOverlay");
+    closing = false;
+  }
+  $("registoCancel").onclick = () => closeOverlay("registoOverlay");
+  $("registoSave").onclick = () => {
+    flush();
+    snapshot = null;
+    finish();
+  };
+  // Leaving the page never loses a note still waiting to be saved.
+  window.addEventListener("pagehide", flush);
 
-  return { leaveDraft, saveDayEdits };
+  return { open, flush, beforeClose };
 }

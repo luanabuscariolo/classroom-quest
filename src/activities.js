@@ -22,7 +22,7 @@ export function createActivities(app) {
     state.history.push({
       id: uid(),
       title,
-      date: new Date().toISOString(),
+      date: app.stamp(),
       points,
       recipients: slots.map((i) => studentRef(state, i)),
       undoneAt: null,

@@ -10,6 +10,8 @@ const types = {
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".webp": "image/webp",
+  ".png": "image/png",
+  ".webmanifest": "application/manifest+json",
 };
 const server = http.createServer(async (request, response) => {
   try {
@@ -19,7 +21,7 @@ const server = http.createServer(async (request, response) => {
     ).replace(/^\/classroom-quest(?=\/)/, "");
     if (name.endsWith("/")) name += "index.html";
     if (
-      !/^\/(index\.html|LICENSE|src\/[\w-]+\.js|assets\/(css\/[\w-]+\.css|images\/[\w-]+\.webp))$/.test(
+      !/^\/(index\.html|manifest\.webmanifest|sw\.js|LICENSE|src\/[\w-]+\.js|assets\/(css\/[\w-]+\.css|images\/[\w-]+\.(webp|png)))$/.test(
         name,
       )
     ) {

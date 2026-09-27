@@ -1,4 +1,5 @@
 import { syncProjectionNodes } from "./presentation-dom.js";
+import { applyTheme } from "./theme.js";
 /** Only sanitized game DOM reaches this window; no diary or workspace serialization. */
 export function createPresentation(app) {
   const { $, element, selectStudent, clearSelection, closeOverlay } = app;
@@ -21,6 +22,8 @@ export function createPresentation(app) {
     "scoreMinus",
     "scorePlus",
     "scorePlusTwo",
+    "scorePlusFive",
+    "scorePlusTen",
     "clearStudent",
     "masterRally",
     "masterPortrait",
@@ -50,7 +53,7 @@ export function createPresentation(app) {
         game = presentationCopy($("gameMain"));
       game.hidden = false;
       game
-        .querySelector(".topbar")
+        .querySelector(".topbar-head")
         .appendChild(element("strong", "pixel", app.state.className));
       nodes.push(game);
       ["drawOverlay", "winnerOverlay", "attentionOverlay", "lifeToast"].forEach(
@@ -133,6 +136,16 @@ export function createPresentation(app) {
     css.rel = "stylesheet";
     css.href = new URL("../assets/css/presentation.css", import.meta.url).href;
     doc.head.appendChild(css);
+    const links = [...doc.querySelectorAll('link[rel="stylesheet"]')];
+    Promise.all(
+      links.map(
+        (l) =>
+          new Promise((resolve) => {
+            l.onload = resolve;
+            l.onerror = resolve;
+          }),
+      ),
+    ).then(() => applyTheme(doc, app.theme));
     presentationWindow.opener = null;
     mirrorPresentation();
     presentationTimer = setInterval(mirrorPresentation, 120);
@@ -165,7 +178,6 @@ export function createPresentation(app) {
   }
 
   $("gameProject").onclick = openPresentation;
-  $("diaryProject").onclick = openPresentation;
   window.addEventListener("pagehide", () => {
     if (presentationWindow && !presentationWindow.closed)
       presentationWindow.close();

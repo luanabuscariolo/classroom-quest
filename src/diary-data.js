@@ -1,5 +1,6 @@
+import { LESSON_MARKS } from "./grading.js";
 import { sameStudent, studentRef } from "./students.js";
-import { dateLabel, dayISO, uid } from "./utils.js";
+import { dateLabel, dayISO, stampOn, uid } from "./utils.js";
 
 /** Diary rules and plain-text reports. No DOM: tested in tests/diary.test.js. */
 
@@ -8,6 +9,7 @@ export const ATTENDANCE_LABELS = {
   present: "Presente",
   absent: "Falta",
   late: "Atraso",
+  excused: "Falta justificada",
 };
 export const DELIVERY_LABELS = {
   pending: "Por verificar",
@@ -15,6 +17,17 @@ export const DELIVERY_LABELS = {
   missing: "Não entregue",
   excused: "Dispensado",
 };
+
+/** Behaviour, participation and material when they differ from the default. */
+export function marksText(row) {
+  const out = [];
+  if (row.behavior && row.behavior !== "good")
+    out.push("Comportamento: " + LESSON_MARKS.behavior[row.behavior]);
+  if (row.participation && row.participation !== "normal")
+    out.push("Participação: " + LESSON_MARKS.participation[row.participation]);
+  if (row.material === false) out.push("Sem material");
+  return out.join(" · ");
+}
 
 /** New lesson with the next number and one attendance row per named student. */
 export function createLesson(c, diary, date, teacher) {
@@ -41,6 +54,9 @@ export function createLesson(c, diary, date, teacher) {
               note: "",
               delivery: "pending",
               awardId: null,
+              behavior: "good",
+              participation: "normal",
+              material: true,
             },
           ]
         : [],
@@ -78,7 +94,8 @@ export function awardHomework(c, lesson, rows, points) {
       0,
       100,
     ),
-    date: new Date().toISOString(),
+    // Recorded on the lesson day, so it shows up in that day's history.
+    date: stampOn(lesson.date),
     points,
     recipients: rows.map((r) => studentRef(c, r.slot)),
     undoneAt: null,
@@ -130,6 +147,7 @@ export function lessonReport(c, diary, lesson, privateNotes) {
       r.name +
         " · " +
         ATTENDANCE_LABELS[r.status] +
+        (marksText(r) ? " · " + marksText(r) : "") +
         " · TPC: " +
         DELIVERY_LABELS[r.delivery],
     );
@@ -166,6 +184,7 @@ export function dailyReport(c, diary, date) {
           r.name +
             ": " +
             ATTENDANCE_LABELS[r.status] +
+            (marksText(r) ? " · " + marksText(r) : "") +
             (r.note ? " · " + r.note : ""),
         );
       });
@@ -211,4 +230,55 @@ export function dailyReport(c, diary, date) {
       .join("\n") || "—",
   );
   return lines.join("\n");
+}
+
+/** Class note of a day: the general note (not about one student). */
+export function classNoteOn(diary, date) {
+  return diary.notes.find((n) => n.date === date && n.slot === null) || null;
+}
+
+/**
+ * Everything recorded on one day, grouped for an easy-to-read view:
+ * per lesson the texts and who was absent, late, without material, etc.
+ */
+export function daySummary(c, diary, date) {
+  const lessons = diary.lessons
+    .filter((l) => l.date === date)
+    .sort((a, b) => a.number - b.number)
+    .map((l) => {
+      const who = (test) => l.attendance.filter(test).map((r) => r.name);
+      return {
+        lesson: l,
+        present: who((r) => !["absent", "excused"].includes(r.status)).length,
+        groups: [
+          ["Faltas", who((r) => r.status === "absent")],
+          ["Faltas justificadas", who((r) => r.status === "excused")],
+          ["Atrasos", who((r) => r.status === "late")],
+          ["Sem material", who((r) => r.material === false)],
+          ["Comportamento a melhorar", who((r) => r.behavior === "poor")],
+          ["Comportamento regular", who((r) => r.behavior === "regular")],
+          ["Participação ativa", who((r) => r.participation === "active")],
+          ["Participação fraca", who((r) => r.participation === "low")],
+          [
+            "Entregaram a TPC desta aula",
+            who((r) => r.delivery === "delivered"),
+          ],
+          [
+            "Não entregaram a TPC desta aula",
+            who((r) => r.delivery === "missing"),
+          ],
+        ].filter(([, names]) => names.length),
+        observations: l.attendance
+          .filter((r) => r.note.trim())
+          .map((r) => ({ name: r.name, text: r.note })),
+      };
+    });
+  const notes = diary.notes.filter((n) => n.date === date);
+  return {
+    date,
+    lessons,
+    classNotes: notes.filter((n) => n.slot === null && n.text.trim()),
+    studentNotes: notes.filter((n) => n.slot !== null),
+    events: eventsOn(c, date),
+  };
 }
