@@ -12,7 +12,7 @@ Este guia explica o TIC Quest de ponta a ponta: o que é, como está organizado,
 - [8. Receitas de manutenção](#8-receitas-de-manutenção)
 - [9. Glossário](#9-glossário)
 
-Documentos relacionados: [README](../README.md) (uso e comandos), [arquitetura](ARQUITETURA.md) (regras técnicas resumidas), [revisão técnica](REVISAO.md) (limites conhecidos) e [segurança](../SECURITY.md).
+Documentos relacionados: [README](../README.md) (uso e comandos), [decisões](DECISOES.md) (porque é assim), [arquitetura](ARQUITETURA.md) (regras técnicas resumidas), [revisão técnica](REVISAO.md) (limites conhecidos) e [segurança](../SECURITY.md).
 
 ---
 

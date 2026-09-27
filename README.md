@@ -122,7 +122,7 @@ Os testes usam apenas dados fictícios. Nunca acrescente backups reais como fixt
 | `tools/`                                                                                                                                       | Servidor local, modo sala (`room.js`), preparação de `dist/` e turma de demonstração       |
 | `docs/`                                                                                                                                        | Guia completo, arquitetura e revisão técnica                                               |
 
-Para compreender o projeto de ponta a ponta (ficheiros, dados, versões, receitas de manutenção), comece pelo [guia completo](docs/GUIA.md). Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).
+Para compreender o projeto de ponta a ponta (ficheiros, dados, versões, receitas de manutenção), comece pelo [guia completo](docs/GUIA.md). Para saber **porque** cada coisa foi feita assim, leia [as decisões do projeto](docs/DECISOES.md). Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).
 
 ## Publicação no GitHub Pages
 
