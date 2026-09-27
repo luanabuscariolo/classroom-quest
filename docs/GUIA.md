@@ -45,23 +45,23 @@ flowchart LR
 
 ### Raiz
 
-| Ficheiro / pasta                       | Para que serve                                                                                            |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `index.html`                           | Todo o HTML da aplicação (ecrãs e janelas). Carrega os CSS e `src/app.js`.                                |
-| `src/`                                 | JavaScript da aplicação (ver abaixo).                                                                     |
-| `assets/css/`                          | Estilos, divididos por área.                                                                              |
-| `assets/images/`                       | Cenário e folhas de sprites (WebP).                                                                       |
-| `tests/`                               | Testes automáticos.                                                                                       |
-| `tools/`                               | `serve.js` (servidor local), `build.js` (prepara `dist/`), `demo.js`/`demo-data.js` (turma fictícia 5ºX). |
-| `docs/`                                | Esta documentação.                                                                                        |
-| `.github/workflows/`                   | `check.yml` verifica cada push; `pages.yml` publica (manual).                                             |
-| `package.json`, `package-lock.json`    | Comandos `npm` e versões exatas das ferramentas de desenvolvimento.                                       |
-| `eslint.config.js`, `.prettierrc.json` | Regras de qualidade (ESLint) e de formatação (Prettier).                                                  |
-| `.editorconfig`, `.gitattributes`      | Fins de linha e indentação consistentes.                                                                  |
-| `.gitignore`                           | Exclui `node_modules/`, `dist/` e nomes típicos de backups (dados pessoais).                              |
-| `.claude/launch.json`                  | Configuração do servidor local para o Claude Code (opcional).                                             |
-| `manifest.webmanifest`, `sw.js`        | App instalável e funcionamento sem internet (cache dos ficheiros).                                        |
-| `LICENSE`, `SECURITY.md`, `README.md`  | Licença, segurança/privacidade e apresentação do projeto.                                                 |
+| Ficheiro / pasta                       | Para que serve                                                                                                                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                           | Todo o HTML da aplicação (ecrãs e janelas). Carrega os CSS e `src/app.js`.                                                                                                                                          |
+| `src/`                                 | JavaScript da aplicação (ver abaixo).                                                                                                                                                                               |
+| `assets/css/`                          | Estilos, divididos por área.                                                                                                                                                                                        |
+| `assets/images/`                       | Cenário e folhas de sprites (WebP).                                                                                                                                                                                 |
+| `tests/`                               | Testes automáticos.                                                                                                                                                                                                 |
+| `tools/`                               | `serve.js` (servidor local), `room.js` (modo sala: dados no PC, tablet pela rede), `static.js` (ficheiros públicos, usado pelos dois), `build.js` (prepara `dist/`), `demo.js`/`demo-data.js` (turma fictícia 5ºX). |
+| `docs/`                                | Esta documentação.                                                                                                                                                                                                  |
+| `.github/workflows/`                   | `check.yml` verifica cada push; `pages.yml` publica (manual).                                                                                                                                                       |
+| `package.json`, `package-lock.json`    | Comandos `npm` e versões exatas das ferramentas de desenvolvimento.                                                                                                                                                 |
+| `eslint.config.js`, `.prettierrc.json` | Regras de qualidade (ESLint) e de formatação (Prettier).                                                                                                                                                            |
+| `.editorconfig`, `.gitattributes`      | Fins de linha e indentação consistentes.                                                                                                                                                                            |
+| `.gitignore`                           | Exclui `node_modules/`, `dist/` e nomes típicos de backups (dados pessoais).                                                                                                                                        |
+| `.claude/launch.json`                  | Configuração do servidor local para o Claude Code (opcional).                                                                                                                                                       |
+| `manifest.webmanifest`, `sw.js`        | App instalável e funcionamento sem internet (cache dos ficheiros).                                                                                                                                                  |
+| `LICENSE`, `SECURITY.md`, `README.md`  | Licença, segurança/privacidade e apresentação do projeto.                                                                                                                                                           |
 
 ### `src/` — JavaScript
 
@@ -136,6 +136,7 @@ flowchart TB
 | `activities.js`       |   ~145 | "Atribuir pontos" a vários alunos; regista o histórico.                                                                                |
 | `roster.js`           |   ~130 | Janela "Equipa de jogadores" (nomes e avatares de todos).                                                                              |
 | `persistence.js`      |   ~105 | Dono do workspace: carregar, gravar, recuperar, restaurar.                                                                             |
+| `room.js`             |   ~330 | Modo sala: liga ao PC com o código, envia e recebe os dados, estado da ligação.                                                        |
 | `teacher.js`          |   ~100 | Nome, título e personagem do professor.                                                                                                |
 | `attention.js`        |    ~95 | Contagem "Atenção, turma!" de 10 segundos.                                                                                             |
 | `teams.js`            |    ~85 | Sorteio de equipas e pontos por equipa.                                                                                                |
@@ -442,6 +443,40 @@ Em **◆ Avaliação → Trabalhos**, a lista **Ver** mostra **Todos os trabalho
 - Exemplo (turma 5ºX, 1.º Trabalho): Criou a pasta 20% · Criou o ficheiro .txt 20% · Guardou o ficheiro na pasta 20% · Escreveu o texto pedido 40%. Notas 100, 100, 100, 30 → (100×20 + 100×20 + 100×20 + 30×40) ÷ 100 = **72**.
 - Trabalhos sem critérios continuam com uma nota única, que também se pode lançar na vista de todos os trabalhos. Com critérios, essa vista mostra a nota calculada (só se altera na ficha).
 
+### …se usa o tablet com o PC da sala (modo sala)
+
+O tablet faz tudo; o PC só mostra a apresentação no projetor. Os dados ficam num ficheiro no PC e os dois aparelhos veem sempre o mesmo.
+
+**Preparar (uma vez):**
+
+1. Instalar o **Node.js** no PC: [nodejs.org](https://nodejs.org), botão "LTS", instalar com as opções sugeridas.
+2. Ter a pasta do projeto no PC (a mesma onde faz os commits). Opcional: botão direito em `Sala.bat` → **Enviar para → Ambiente de trabalho (criar atalho)**.
+
+**Em cada aula:**
+
+1. Ligar o hotspot do telemóvel; ligar o PC e o tablet a ele.
+2. No PC, dois cliques em **Sala.bat**. A janela preta mostra onde estão os dados (`Documentos\TIC Quest`), o endereço para o tablet (ex.: `http://192.168.43.20:4180`) e o **código da sala** (6 dígitos; é sempre o mesmo). O navegador do PC abre sozinho na aplicação. **Não feche a janela preta durante a aula.**
+3. No tablet, abrir no Chrome o endereço mostrado. Na primeira vez pede o código; depois lembra-se. Se o endereço mudar (outro hotspot), pede de novo.
+4. No PC, entrar na turma e tocar em **▣ Apresentar**; levar a janela para o projetor.
+5. Usar o tablet para tudo. Em baixo, à esquerda, aparece o estado: **🔗 Ligado ao PC da sala** ou **⚠ Sem ligação**. No PC, **🔗 Sala aberta · ligar o tablet** mostra outra vez o endereço e o código.
+6. No fim, fechar a janela preta. Os dados já estão gravados.
+
+**O que acontece se…**
+
+| Situação                                           | O que acontece                                                                                                                                                  |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A rede falha a meio da aula                        | O tablet continua a funcionar e avisa "Sem ligação". As alterações ficam no tablet e são enviadas sozinhas quando a ligação volta.                              |
+| Mexe no PC e no tablet ao mesmo tempo              | Raro. Vencem os dados do PC; o que o tablet não conseguiu enviar é descarregado como ficheiro `TIC_NAO_ENVIADO_….json` (importável).                            |
+| O tablet não abre o endereço                       | Confirme que os dois estão no mesmo hotspot e que o Windows deixou o Node.js usar a rede (ver abaixo). Se a janela mostrar dois endereços, experimente o outro. |
+| Primeira vez com a sala e o PC ainda não tem dados | O aparelho pergunta se deve enviar para o PC as turmas que já tem guardadas.                                                                                    |
+| Quer usar o tablet em casa, sem o PC               | Abra a aplicação normal (GitHub Pages). Os dados do modo sala estão no PC: faça um backup no PC e importe no tablet.                                            |
+| Quer voltar atrás                                  | Em `Documentos\TIC Quest\copias` há cópias com data e hora. Importe uma com **Restaurar / importar → Substituir**.                                              |
+| Quer trocar o código (ex.: alguém o viu)           | Feche a sala e abra-a com `node tools\room.js --novo-codigo --abrir`. Os aparelhos terão de escrever o código novo.                                             |
+
+**Firewall do Windows:** na primeira vez aparece "Permitir que o Node.js comunique nestas redes?". Marque **Redes privadas** e, se o hotspot tiver ficado como rede pública, também **Redes públicas**. Alternativa mais segura: em **Definições → Rede e Internet → Wi-Fi → (nome do hotspot)**, escolha **Rede privada**.
+
+**Segurança:** só entra quem sabe o código; depois de 5 códigos errados num minuto, a sala espera um minuto. A ligação não é cifrada (é uma rede local), por isso use o hotspot do seu telemóvel, com palavra-passe, e não a rede aberta da escola.
+
 ### …se consulta o desempenho de um aluno
 
 **◆ Avaliação → Desempenho** (primeiro separador) mostra o histórico sem médias: uma coluna por aula, com o emoji do que aconteceu. Em **Mostrar** escolhe-se: tudo (só ocorrências; ✓ = aula sem ocorrências), só comportamento, participação, assiduidade (presença e material) ou TPC, **uma aula** (todas as marcações e observações desse dia) ou **média até uma aula** (médias do período até essa data, com contagem de faltas, atrasos e falta de material).
@@ -535,20 +570,21 @@ O HTML original não está no repositório, por isso a tabela descreve apenas o 
 
 `npm test` corre todos; `npm run check` também verifica formatação e lint (é o que o GitHub corre a cada push). Os testes usam apenas dados fictícios.
 
-| Ficheiro                    | O que garante                                                                                                                                                                                        |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/model.test.js`       | Backups vão e voltam iguais; ficheiro alterado é recusado; formatos antigos abrem; limites e dados inválidos.                                                                                        |
-| `tests/students.test.js`    | Migração para a versão 11; corrigir nome vs. remover; IDs repetidos recusados; regras do avatar.                                                                                                     |
-| `tests/grading.test.js`     | Nota do período: exemplo da planilha (57,3 · 2,86), faltas, atrasos, material, trabalhos em falta, sem trabalhos = sem nota final, nota máxima possível, regras, migração, exportação.               |
-| `tests/demo.test.js`        | Turma 5ºX: notas dos 30 alunos iguais a um cálculo independente; cenários conferidos à mão; explicação "Como foi calculada".                                                                         |
-| `tests/theme.test.js`       | Regras de cor dos temas Verde, Preto e Claro.                                                                                                                                                        |
-| `tests/diary.test.js`       | Numeração de aulas; prémio de TPC (uma vez, só a quem entregou, limites); conteúdo dos relatórios.                                                                                                   |
-| `tests/storage.test.js`     | Gravação guarda a versão anterior; deteta alterações de outra janela; erro de quota não finge sucesso.                                                                                               |
-| `tests/persistence.test.js` | Arranque vazio; recuperação da cópia anterior; armazenamento inacessível; conflito; restauro.                                                                                                        |
-| `tests/app.test.js`         | Percurso completo no ecrã: professor, turma, pontos, vidas, equipas, diário, TPC, apresentação (sem dados privados), importação.                                                                     |
-| `tests/game.test.js`        | Roleta, "Atenção, turma!", atividades, renomear e remover aluno, Registo (emojis, TPC verificada noutro dia, cancelar/salvar), data da aula, tabelas de desempenho e acompanhamento, saída da turma. |
-| `tests/teacher.test.js`     | Nome do professor começa vazio e é lembrado; perfis antigos não são apagados.                                                                                                                        |
-| `tests/site.test.js`        | HTML sem IDs repetidos nem scripts embutidos; todos os ficheiros referidos existem; a cache offline (`sw.js`) lista todos os ficheiros públicos.                                                     |
+| Ficheiro                    | O que garante                                                                                                                                                                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tests/model.test.js`       | Backups vão e voltam iguais; ficheiro alterado é recusado; formatos antigos abrem; limites e dados inválidos.                                                                                                                                                                              |
+| `tests/students.test.js`    | Migração para a versão 11; corrigir nome vs. remover; IDs repetidos recusados; regras do avatar.                                                                                                                                                                                           |
+| `tests/grading.test.js`     | Nota do período: exemplo da planilha (57,3 · 2,86), faltas, atrasos, material, trabalhos em falta, sem trabalhos = sem nota final, nota máxima possível, regras, migração, exportação.                                                                                                     |
+| `tests/demo.test.js`        | Turma 5ºX: notas dos 30 alunos iguais a um cálculo independente; cenários conferidos à mão; explicação "Como foi calculada".                                                                                                                                                               |
+| `tests/theme.test.js`       | Regras de cor dos temas Verde, Preto e Claro.                                                                                                                                                                                                                                              |
+| `tests/diary.test.js`       | Numeração de aulas; prémio de TPC (uma vez, só a quem entregou, limites); conteúdo dos relatórios.                                                                                                                                                                                         |
+| `tests/storage.test.js`     | Gravação guarda a versão anterior; deteta alterações de outra janela; erro de quota não finge sucesso.                                                                                                                                                                                     |
+| `tests/persistence.test.js` | Arranque vazio; recuperação da cópia anterior; armazenamento inacessível; conflito; restauro.                                                                                                                                                                                              |
+| `tests/app.test.js`         | Percurso completo no ecrã: professor, turma, pontos, vidas, equipas, diário, TPC, apresentação (sem dados privados), importação.                                                                                                                                                           |
+| `tests/game.test.js`        | Roleta, "Atenção, turma!", atividades, renomear e remover aluno, Registo (emojis, TPC verificada noutro dia, cancelar/salvar), data da aula, tabelas de desempenho e acompanhamento, saída da turma.                                                                                       |
+| `tests/teacher.test.js`     | Nome do professor começa vazio e é lembrado; perfis antigos não são apagados.                                                                                                                                                                                                              |
+| `tests/room.test.js`        | Modo sala: código obrigatório (e bloqueio após 5 erros), gravação em ficheiro com cópias, conflito entre aparelhos, dados inválidos recusados, ficheiro danificado nunca substituído, endereços mostrados ao tablet; percurso completo no ecrã (gravar no PC e ver as mudanças do tablet). |
+| `tests/site.test.js`        | HTML sem IDs repetidos nem scripts embutidos; todos os ficheiros referidos existem; a cache offline (`sw.js`) lista todos os ficheiros públicos.                                                                                                                                           |
 
 Os testes de ecrã usam o **jsdom**, um navegador simulado dentro do Node. Por isso não verificam o aspeto visual; isso continua a ser feito à mão, no navegador.
 

@@ -807,6 +807,34 @@
       </div>
     </section>
     <section
+      id="roomOverlay"
+      class="overlay"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="roomTitle"
+    >
+      <div class="modal">
+        <h2 id="roomTitle" class="pixel">🔗 LIGAR AO PC DA SALA</h2>
+        <p>
+          Escreva o código de 6 dígitos que aparece na janela "TIC Quest · Sala"
+          no PC. Só é preciso uma vez neste aparelho.
+        </p>
+        <form id="roomForm" class="room-form">
+          <input
+            id="roomCode"
+            class="field"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="6"
+            aria-label="Código da sala"
+            required
+          /><button class="button gold" type="submit">Ligar</button>
+        </form>
+        <p id="roomError" class="diary-hint" role="alert"></p>
+      </div>
+    </section>
+    <section
       id="exitOverlay"
       class="overlay"
       hidden
@@ -1065,5 +1093,6 @@
     </section>
     <div id="confetti" class="confetti" aria-hidden="true"></div>
     <script type="module" src="./src/app.js"></script>
+    <button id="roomStatus" class="room-status" type="button" hidden></button>
   </body>
 </html>

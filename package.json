@@ -4,6 +4,7 @@
   "description": "Jogo de sala de aula para professores, com sorteios, pontos, vidas, diário e modo de apresentação.",
   "scripts": {
     "dev": "node tools/serve.js",
+    "sala": "node tools/room.js --abrir",
     "test": "node --test --test-timeout=15000 tests/*.test.js",
     "lint": "eslint src tests tools eslint.config.js",
     "build": "node tools/build.js",

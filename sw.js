@@ -45,6 +45,7 @@ const FILES = [
   "./src/presentation-dom.js",
   "./src/presentation.js",
   "./src/raffle.js",
+  "./src/room.js",
   "./src/roster.js",
   "./src/rules-ui.js",
   "./src/storage.js",
@@ -81,7 +82,8 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (
     request.method !== "GET" ||
-    new URL(request.url).origin !== location.origin
+    new URL(request.url).origin !== location.origin ||
+    new URL(request.url).pathname.includes("/api/")
   )
     return;
   event.respondWith(

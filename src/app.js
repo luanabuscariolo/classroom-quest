@@ -21,6 +21,7 @@ import { $, button, element, reducedMotion, replay } from "./dom.js";
 import { createGradesUI } from "./grades-ui.js";
 import { createHub } from "./hub.js";
 import { createPersistence } from "./persistence.js";
+import { connectRoom, isRoom } from "./room.js";
 import { createPresentation } from "./presentation.js";
 import { createRaffle } from "./raffle.js";
 import { createRoster } from "./roster.js";
@@ -541,6 +542,7 @@ function openOverlay(id, focusId) {
   if (focusTarget) focusTarget.focus();
 }
 function closeOverlay(id) {
+  if (id === "roomOverlay") return; // the room code is required
   if (id === "registoOverlay" && !diary.beforeClose()) return;
   if (id === "drawOverlay") {
     raffle.cancel();
@@ -739,6 +741,36 @@ function enterClass(id, day = dayISO(new Date())) {
   window.scrollTo(0, 0);
 }
 
+/**
+ * Room mode: another device changed the data. Show it here, keeping the open
+ * class and selection. The PC (projector) also follows the class opened on
+ * the tablet.
+ */
+function reloadWorkspace() {
+  persistence.load();
+  const w = persistence.workspace;
+  teacher.refresh();
+  backupUI.updateStatus();
+  if ($("gameMain").hidden) {
+    hub.render();
+    return;
+  }
+  const followed = room && room.isHost ? w.activeClassId : null,
+    c =
+      w.classes.find((x) => x.id === followed) ||
+      w.classes.find((x) => x.id === state.id);
+  if (!c) {
+    showHub();
+    return;
+  }
+  if (c.id !== state.id) selected = -1;
+  state = c;
+  buildCards();
+  syncAll();
+}
+/** Changes from the PC wait while a window (Registo, Avaliação…) is open. */
+const noOpenWindow = () => !document.querySelector(".overlay:not([hidden])");
+
 // ── Controllers ─────────────────────────────────────────────────────────────
 
 // Values that are replaced while the app runs (opening a class, restoring a
@@ -772,8 +804,10 @@ function withLive(dependencies) {
 
 // Created in dependency order. Arrow functions defer calls to controllers
 // that are created further down; none of them run before initialisation.
+// Room mode ("TIC Quest · Sala"): the data lives on the teacher's PC.
+let room = null;
 const persistence = createPersistence(
-  () => localStorage,
+  () => (room ? room.storage : localStorage),
   () => backupUI.updateStatus(),
 );
 const teacher = createTeacher(
@@ -900,11 +934,26 @@ const diary = createDiary(
   }),
 );
 
+if (isRoom()) {
+  // Nothing behind the room code while it connects.
+  $("bootWarning").hidden = true;
+  $("gameMain").hidden = true;
+  room = await connectRoom({
+    $,
+    canApply: noOpenWindow,
+    onRemoteChange: reloadWorkspace,
+  });
+}
 persistence.load();
 applyTheme(document, theme);
 renderThemePicker();
 // Installed app: works offline, and asks the browser not to clear the data.
-if ("serviceWorker" in navigator && location.protocol.startsWith("http"))
+// (Not in room mode: the PC always serves the current version.)
+if (
+  !room &&
+  "serviceWorker" in navigator &&
+  location.protocol.startsWith("http")
+)
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 navigator.storage?.persist?.().catch(() => {});
 showHub();

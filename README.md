@@ -21,6 +21,7 @@ Funciona inteiramente no navegador: não há contas, servidor de dados nem servi
 - **Acompanhamento:** tabela em que todos começam no máximo em cada categoria e vão descendo (ou recuperando) aula a aula, com a nota máxima ainda possível.
 - **Avaliação e notas do período:** ficha de cada trabalho (data, descrição e critérios de avaliação com pesos que somam 100), notas dos trabalhos (0–100) ou por critério, nota do período calculada a partir dos registos com regras editáveis (pesos, valores, datas dos períodos), modo de lançamento no Inovar e exportação para Excel. Os registos guardam o que aconteceu; a nota é recalculada, por isso as regras podem mudar no fim do período.
 - **Apresentação:** uma segunda janela para o projetor mostra apenas o jogo; o diário e as notas privadas ficam no ecrã do professor.
+- **Modo sala:** o tablet comanda tudo e o PC mostra a apresentação; os dados ficam num ficheiro no PC, com cópias automáticas.
 - **Backup e restauro:** exportação completa ou por turma, com verificação de integridade; importação como cópia ou em substituição.
 
 ## Como usar
@@ -31,6 +32,17 @@ Funciona inteiramente no navegador: não há contas, servidor de dados nem servi
 4. Em cada turma, **▶ Aula de hoje** abre a aula do dia. **📅 Aula passada** abre uma aula anterior **só para leitura**; para a alterar, toque em **✎ Editar esta aula** e, no fim, em **✓ Terminar edição**. Tudo o que fizer fica gravado no dia dessa aula.
 5. Use **✎ Registo** durante a aula e **◆ Avaliação** para os trabalhos e as notas do período.
 6. **Descarregue um backup com regularidade.** É a única forma de levar os dados para outro computador ou navegador e de os recuperar se o navegador for limpo.
+
+### Modo sala: tablet + PC do projetor
+
+Para usar o tablet para tudo e o PC só para a apresentação, com os dados sempre iguais nos dois. Os dados ficam num ficheiro no PC (`Documentos\TIC Quest\dados.json`), com cópias automáticas; nada vai para a internet.
+
+1. **Uma vez:** instale o [Node.js](https://nodejs.org) (versão LTS) no PC e tenha a pasta deste projeto no PC.
+2. **Em cada aula:** ligue o PC e o tablet ao hotspot do telemóvel e dê dois cliques em **`Sala.bat`** (na pasta do projeto). Abre-se uma janela preta com o endereço para o tablet e o **código da sala**, e o navegador do PC já na aplicação.
+3. No tablet, abra no Chrome o endereço mostrado (ex.: `http://192.168.43.20:4180`) e escreva o código (só na primeira vez).
+4. No PC, entre na turma e toque em **▣ Apresentar**; leve essa janela para o projetor. A partir daí, tudo o que fizer no tablet aparece no projetor em 1–2 segundos.
+
+Na primeira vez, o Windows pergunta se o Node.js pode usar a rede: **permita** (se o hotspot aparecer como rede pública, marque também "Redes públicas"). Passo a passo e resolução de problemas no [guia](docs/GUIA.md#se-usa-o-tablet-com-o-pc-da-sala-modo-sala).
 
 ### Instalar no tablet (Android)
 
@@ -60,15 +72,16 @@ Não abra `index.html` com duplo clique: os módulos JavaScript precisam de ser 
 
 ### Comandos
 
-| Comando          | O que faz                                                                                                 |
-| ---------------- | --------------------------------------------------------------------------------------------------------- |
-| `npm run dev`    | Servidor local em `127.0.0.1`                                                                             |
-| `npm run format` | Formata HTML, CSS, JS e Markdown com Prettier                                                             |
-| `npm run lint`   | ESLint                                                                                                    |
-| `npm test`       | Testes com o executor nativo do Node (`node --test`)                                                      |
-| `npm run check`  | Formatação + lint + testes (o mesmo que a CI executa)                                                     |
-| `npm run build`  | Copia apenas os ficheiros públicos para `dist/`                                                           |
-| `npm run demo`   | Cria `TIC_DEMO_5X.json`: turma fictícia 5ºX (30 alunos, 10 aulas, trabalhos) para importar e experimentar |
+| Comando          | O que faz                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`    | Servidor local em `127.0.0.1`                                                                                 |
+| `npm run sala`   | Modo sala: dados em `Documentos\TIC Quest`, tablet ligado pela rede local com código (o mesmo que `Sala.bat`) |
+| `npm run format` | Formata HTML, CSS, JS e Markdown com Prettier                                                                 |
+| `npm run lint`   | ESLint                                                                                                        |
+| `npm test`       | Testes com o executor nativo do Node (`node --test`)                                                          |
+| `npm run check`  | Formatação + lint + testes (o mesmo que a CI executa)                                                         |
+| `npm run build`  | Copia apenas os ficheiros públicos para `dist/`                                                               |
+| `npm run demo`   | Cria `TIC_DEMO_5X.json`: turma fictícia 5ºX (30 alunos, 10 aulas, trabalhos) para importar e experimentar     |
 
 Os testes usam apenas dados fictícios. Nunca acrescente backups reais como fixtures.
 
@@ -99,7 +112,7 @@ Os testes usam apenas dados fictícios. Nunca acrescente backups reais como fixt
 | `src/presentation.js`, `src/presentation-dom.js`                                                                                               | Janela de apresentação e atualização do seu DOM                                            |
 | `src/dom.js`, `src/utils.js`, `src/theme.js`                                                                                                   | Utilitários de DOM e datas; temas de cores                                                 |
 | `tests/`                                                                                                                                       | Testes de dados, persistência e fluxos integrados (com jsdom)                              |
-| `tools/`                                                                                                                                       | Servidor local, preparação de `dist/` e turma de demonstração                              |
+| `tools/`                                                                                                                                       | Servidor local, modo sala (`room.js`), preparação de `dist/` e turma de demonstração       |
 | `docs/`                                                                                                                                        | Guia completo, arquitetura e revisão técnica                                               |
 
 Para compreender o projeto de ponta a ponta (ficheiros, dados, versões, receitas de manutenção), comece pelo [guia completo](docs/GUIA.md). Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).

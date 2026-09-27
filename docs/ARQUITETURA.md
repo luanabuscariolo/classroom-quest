@@ -67,6 +67,14 @@ A apresentação recebe cópias do DOM do jogo e de overlays públicos permitido
 
 O DOM é atualizado de forma incremental para não reiniciar todas as animações. A roleta (`raffle.js`) usa um temporizador da apresentação quando ela existe, para continuar a girar com a janela principal minimizada, e regressa à janela principal ao fechá-la.
 
+## Modo sala (tablet + PC)
+
+`tools/room.js` ("TIC Quest · Sala") corre no PC do professor. Serve os mesmos ficheiros públicos (`tools/static.js`, partilhado com `serve.js`) e uma API mínima: `POST /api/login` (código de 6 dígitos → token), `GET /api/workspace?since=N` (204 se nada mudou) e `PUT /api/workspace` com a versão de base (409 se outro aparelho gravou primeiro). O `index.html` servido pela sala leva `<meta name="tic-room">` e `connect-src 'self'`; publicado no GitHub Pages continua com `connect-src 'none'`.
+
+Os dados ficam em `Documentos\TIC Quest\dados.json` (formato de workspace, importável como backup), escritos por ficheiro temporário + renomear; `copias/` guarda uma cópia no máximo a cada 10 minutos (as 100 mais recentes e a primeira de cada dia). Um `dados.json` danificado nunca é substituído: a sala não abre e indica as cópias. O código e os aparelhos já ligados ficam em `sala.json`. O próprio PC (localhost) não precisa do código.
+
+No navegador, `src/room.js` troca o armazenamento de `persistence.js`: em vez de `localStorage`, um objeto com a mesma interface que guarda o workspace em memória e o envia ao PC; as outras chaves (tema, token) ficam no navegador. De 1,5 em 1,5 segundos pergunta ao PC se há mudanças; quando há, `reloadWorkspace()` em `app.js` volta a desenhar o ecrã (espera se uma janela como o Registo estiver aberta). O PC segue a turma aberta no tablet; abrir outra turma não é enviado como alteração. Sem rede, as alterações ficam guardadas no aparelho (`tic-quest.room.pending`) e são enviadas quando a ligação volta; em conflito, vencem os dados do PC e o que não foi enviado é descarregado como ficheiro. A janela de apresentação é a de sempre: copia o ecrã do PC, que se atualiza sozinho.
+
 ## App instalável e offline
 
 `manifest.webmanifest` e `sw.js` (na raiz, para controlar todo o site) permitem instalar a aplicação e usá-la sem internet. O service worker usa primeiro a rede e guarda uma cópia; sem rede, serve a cópia. Ao acrescentar um ficheiro público, acrescente-o a `FILES` em `sw.js` (o teste `site.test.js` falha se faltar). `app.js` também pede ao navegador armazenamento persistente, para reduzir o risco de os dados serem apagados.
