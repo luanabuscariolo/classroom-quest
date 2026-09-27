@@ -443,39 +443,39 @@ Em **◆ Avaliação → Trabalhos**, a lista **Ver** mostra **Todos os trabalho
 - Exemplo (turma 5ºX, 1.º Trabalho): Criou a pasta 20% · Criou o ficheiro .txt 20% · Guardou o ficheiro na pasta 20% · Escreveu o texto pedido 40%. Notas 100, 100, 100, 30 → (100×20 + 100×20 + 100×20 + 30×40) ÷ 100 = **72**.
 - Trabalhos sem critérios continuam com uma nota única, que também se pode lançar na vista de todos os trabalhos. Com critérios, essa vista mostra a nota calculada (só se altera na ficha).
 
-### …se usa o tablet com o PC da sala (modo sala)
+### …se usa o modo sala
 
-O tablet faz tudo; o PC só mostra a apresentação no projetor. Os dados ficam num ficheiro no PC e os dois aparelhos veem sempre o mesmo.
+O modo sala é opcional. Um computador guarda os dados num ficheiro (`Documentos\TIC Quest\dados.json`, com cópias automáticas) e todos os aparelhos que abrem a aplicação a partir dele veem e alteram os mesmos dados. Pode usar-se só no computador (para ter os dados num ficheiro) ou com um segundo aparelho na mão (tablet, telemóvel, portátil) enquanto o computador mostra a apresentação.
 
 **Preparar (uma vez):**
 
-1. Instalar o **Node.js** no PC: [nodejs.org](https://nodejs.org), botão "LTS", instalar com as opções sugeridas.
-2. Ter a pasta do projeto no PC (a mesma onde faz os commits). Opcional: botão direito em `Sala.bat` → **Enviar para → Ambiente de trabalho (criar atalho)**.
+1. Instalar o **Node.js** no computador: [nodejs.org](https://nodejs.org), botão "LTS", instalar com as opções sugeridas.
+2. Ter a pasta do projeto no computador. Opcional: botão direito em `Sala.bat` → **Enviar para → Ambiente de trabalho (criar atalho)**.
 
-**Em cada aula:**
+**Sempre que for usar:**
 
-1. Ligar o hotspot do telemóvel; ligar o PC e o tablet a ele.
-2. No PC, dois cliques em **Sala.bat**. A janela preta mostra onde estão os dados (`Documentos\TIC Quest`), o endereço para o tablet (ex.: `http://192.168.43.20:4180`) e o **código da sala** (6 dígitos; é sempre o mesmo). O navegador do PC abre sozinho na aplicação. **Não feche a janela preta durante a aula.**
-3. No tablet, abrir no Chrome o endereço mostrado. Na primeira vez pede o código; depois lembra-se. Se o endereço mudar (outro hotspot), pede de novo.
-4. No PC, entrar na turma e tocar em **▣ Apresentar**; levar a janela para o projetor.
-5. Usar o tablet para tudo. A **roleta** e o **"Atenção, turma!"** aparecem no projetor ao mesmo tempo, com o mesmo aluno sorteado e o mesmo resultado. Em baixo, à esquerda, aparece o estado: **🔗 Ligado ao PC da sala** ou **⚠ Sem ligação**. No PC, **🔗 Sala aberta · ligar o tablet** mostra outra vez o endereço e o código.
+1. Se houver um segundo aparelho: ligar os dois **à mesma rede** (Wi-Fi da escola, de casa, ou o hotspot de um telemóvel).
+2. No computador, dois cliques em **Sala.bat**. A janela preta mostra onde estão os dados, o endereço para o outro aparelho (ex.: `http://192.168.1.20:4180`) e o **código da sala** (6 dígitos; é sempre o mesmo). O navegador do computador abre sozinho na aplicação. **Não feche a janela preta enquanto estiver a usar.**
+3. No outro aparelho, abrir no navegador o endereço mostrado. Na primeira vez pede o código; depois lembra-se. Se o endereço mudar (outra rede), pede de novo.
+4. No computador, entrar na turma e tocar em **▣ Apresentar**; levar a janela para o projetor.
+5. Usar o outro aparelho para tudo. A **roleta** e o **"Atenção, turma!"** aparecem no projetor ao mesmo tempo, com o mesmo aluno sorteado e o mesmo resultado. Em baixo, à esquerda, aparece o estado: **🔗 Ligado ao PC da sala** ou **⚠ Sem ligação**. No computador, **🔗 Sala aberta · ligar outro aparelho** mostra outra vez o endereço e o código.
 6. No fim, fechar a janela preta. Os dados já estão gravados.
 
 **O que acontece se…**
 
-| Situação                                           | O que acontece                                                                                                                                                  |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A rede falha a meio da aula                        | O tablet continua a funcionar e avisa "Sem ligação". As alterações ficam no tablet e são enviadas sozinhas quando a ligação volta.                              |
-| Mexe no PC e no tablet ao mesmo tempo              | Raro. Vencem os dados do PC; o que o tablet não conseguiu enviar é descarregado como ficheiro `TIC_NAO_ENVIADO_….json` (importável).                            |
-| O tablet não abre o endereço                       | Confirme que os dois estão no mesmo hotspot e que o Windows deixou o Node.js usar a rede (ver abaixo). Se a janela mostrar dois endereços, experimente o outro. |
-| Primeira vez com a sala e o PC ainda não tem dados | O aparelho pergunta se deve enviar para o PC as turmas que já tem guardadas.                                                                                    |
-| Quer usar o tablet em casa, sem o PC               | Abra a aplicação normal (GitHub Pages). Os dados do modo sala estão no PC: faça um backup no PC e importe no tablet.                                            |
-| Quer voltar atrás                                  | Em `Documentos\TIC Quest\copias` há cópias com data e hora. Importe uma com **Restaurar / importar → Substituir**.                                              |
-| Quer trocar o código (ex.: alguém o viu)           | Feche a sala e abra-a com `node tools\room.js --novo-codigo --abrir`. Os aparelhos terão de escrever o código novo.                                             |
+| Situação                                                   | O que acontece                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A rede falha a meio da aula                                | O outro aparelho continua a funcionar e avisa "Sem ligação". As alterações ficam nele e são enviadas sozinhas quando a ligação volta.                                                                                                                                                            |
+| Mexe nos dois aparelhos ao mesmo tempo                     | Raro. Vencem os dados do computador; o que o outro aparelho não conseguiu enviar é descarregado como ficheiro `TIC_NAO_ENVIADO_….json` (importável).                                                                                                                                             |
+| O outro aparelho não abre o endereço                       | Confirme que os dois estão na mesma rede e que o Windows deixou o Node.js usar a rede (ver abaixo). Algumas redes (sobretudo de convidados) não deixam os aparelhos falarem entre si: use outra, por exemplo o hotspot de um telemóvel. Se a janela mostrar dois endereços, experimente o outro. |
+| Primeira vez com a sala e o computador ainda não tem dados | O aparelho pergunta se deve enviar para o computador as turmas que já tem guardadas no navegador.                                                                                                                                                                                                |
+| Quer usar outro aparelho sem o computador                  | Abra a aplicação normal (GitHub Pages). Os dados do modo sala estão no computador: faça lá um backup e importe-o no outro aparelho.                                                                                                                                                              |
+| Quer voltar atrás                                          | Em `Documentos\TIC Quest\copias` há cópias com data e hora. Importe uma com **Restaurar / importar → Substituir**.                                                                                                                                                                               |
+| Quer trocar o código (ex.: alguém o viu)                   | Feche a sala e abra-a com `node tools\room.js --novo-codigo --abrir`. Os aparelhos terão de escrever o código novo.                                                                                                                                                                              |
 
-**Firewall do Windows:** na primeira vez aparece "Permitir que o Node.js comunique nestas redes?". Marque **Redes privadas** e, se o hotspot tiver ficado como rede pública, também **Redes públicas**. Alternativa mais segura: em **Definições → Rede e Internet → Wi-Fi → (nome do hotspot)**, escolha **Rede privada**.
+**Firewall do Windows:** na primeira vez aparece "Permitir que o Node.js comunique nestas redes?". Marque **Redes privadas** e, se a rede estiver marcada como pública, também **Redes públicas**. Alternativa mais segura: em **Definições → Rede e Internet → Wi-Fi → (nome da rede)**, escolha **Rede privada**.
 
-**Segurança:** só entra quem sabe o código; depois de 5 códigos errados num minuto, a sala espera um minuto. A ligação não é cifrada (é uma rede local), por isso use o hotspot do seu telemóvel, com palavra-passe, e não a rede aberta da escola.
+**Segurança:** só entra quem sabe o código; depois de 5 códigos errados num minuto, a sala espera um minuto. A ligação não é cifrada (é uma rede local): prefira uma rede com palavra-passe (a da escola, a de casa ou o hotspot de um telemóvel) a uma rede aberta.
 
 ### …se consulta o desempenho de um aluno
 

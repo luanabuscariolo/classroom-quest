@@ -94,13 +94,13 @@ export async function connectRoom({ $, canApply, onRemoteChange, onEvent }) {
     else if (rejected)
       showStatus("⚠ O PC recusou os últimos dados: " + rejectReason, "offline");
     else if (isHost && info) {
-      showStatus("🔗 Sala aberta · ligar o tablet", "online");
+      showStatus("🔗 Sala aberta · ligar outro aparelho", "online");
       const pill = $("roomStatus");
       if (!pill) return;
-      pill.title = "Mostrar o endereço e o código para o tablet";
+      pill.title = "Mostrar o endereço e o código para outro aparelho";
       pill.onclick = () =>
         alert(
-          "No tablet (ligado à mesma rede, por exemplo o hotspot do telemóvel), abra:\n\n" +
+          "No outro aparelho (ligado à mesma rede), abra no navegador:\n\n" +
             info.addresses
               .map((a) => "http://" + a + ":" + info.port)
               .join("\nou ") +
@@ -142,7 +142,7 @@ export async function connectRoom({ $, canApply, onRemoteChange, onEvent }) {
           resolve();
         } catch {
           $("roomError").textContent =
-            "Sem ligação ao PC. Confirme que a sala está aberta e que o tablet está na mesma rede.";
+            "Sem ligação ao PC. Confirme que a sala está aberta e que este aparelho está na mesma rede.";
         }
       };
     });

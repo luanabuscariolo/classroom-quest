@@ -1,6 +1,6 @@
-// "TIC Quest · Sala": runs on the teacher's PC during the lesson. The data
-// lives in a file on the PC; the tablet (on the same network, e.g. the
-// phone's hotspot) and the projector window both read and write it here.
+// "TIC Quest · Sala": runs on the teacher's computer. The data lives in a
+// file on it; the computer's own window (e.g. the projector) and, optionally,
+// other devices on the same network all read and write it here.
 //
 //   node tools/room.js [--dados <pasta>] [--porta 4180] [--novo-codigo] [--abrir]
 import http from "node:http";
@@ -385,11 +385,11 @@ if (
           "  ─────────────────────────────────────────────",
           "  Dados guardados em: " + room.dataDir,
           "",
-          "  No PC (apresentação):   " + local,
+          "  Neste computador:             " + local,
           ...lanAddresses().map(
-            (a) => "  No tablet (mesma rede): http://" + a + ":" + port,
+            (a) => "  Outro aparelho (mesma rede): http://" + a + ":" + port,
           ),
-          "  Código da sala:         " + room.code,
+          "  Código da sala:               " + room.code,
           "",
           "  Deixe esta janela aberta durante a aula.",
           "  Para terminar, feche-a (os dados já estão gravados).",
