@@ -40,7 +40,7 @@ Para usar o tablet para tudo e o PC só para a apresentação, com os dados semp
 1. **Uma vez:** instale o [Node.js](https://nodejs.org) (versão LTS) no PC e tenha a pasta deste projeto no PC.
 2. **Em cada aula:** ligue o PC e o tablet ao hotspot do telemóvel e dê dois cliques em **`Sala.bat`** (na pasta do projeto). Abre-se uma janela preta com o endereço para o tablet e o **código da sala**, e o navegador do PC já na aplicação.
 3. No tablet, abra no Chrome o endereço mostrado (ex.: `http://192.168.43.20:4180`) e escreva o código (só na primeira vez).
-4. No PC, entre na turma e toque em **▣ Apresentar**; leve essa janela para o projetor. A partir daí, tudo o que fizer no tablet aparece no projetor em 1–2 segundos.
+4. No PC, entre na turma e toque em **▣ Apresentar**; leve essa janela para o projetor. A partir daí, tudo o que fizer no tablet aparece no projetor em 1–2 segundos; a roleta e o "Atenção, turma!" aparecem ao mesmo tempo, com o mesmo resultado.
 
 Na primeira vez, o Windows pergunta se o Node.js pode usar a rede: **permita** (se o hotspot aparecer como rede pública, marque também "Redes públicas"). Passo a passo e resolução de problemas no [guia](docs/GUIA.md#se-usa-o-tablet-com-o-pc-da-sala-modo-sala).
 

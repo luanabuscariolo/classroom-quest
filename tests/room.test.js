@@ -87,6 +87,20 @@ test("room server: code, saving to a file, conflicts and copies", async () => {
     for (let i = 0; i < 5; i++) await login("111111");
     assert.equal((await login(room.code)).status, 429);
 
+    // Live events: a device waiting for them gets each one at once.
+    const events = (q = "") => fetch(base + "api/events" + q, { headers });
+    const { seq } = await (await events()).json();
+    const waiting = events("?after=" + seq);
+    await fetch(base + "api/events", {
+      method: "POST",
+      headers,
+      body: json({ type: "attention-start", from: "tablet" }),
+    });
+    const got = await (await waiting).json();
+    assert.equal(got.events.length, 1);
+    assert.equal(got.events[0].type, "attention-start");
+    assert.ok(got.events[0].age < 1000);
+
     // Next lesson: same code, same paired tablet, same data.
     const code = room.code;
     await shut(room);
@@ -175,6 +189,34 @@ test("the app in room mode saves to the PC and shows changes from the tablet", a
     await until(() =>
       /★ 10/.test(w.document.querySelector('[data-seat="1"]').textContent),
     );
+
+    // Live events from the tablet: the projector spins the same roleta…
+    const event = (body) =>
+      fetch(base + "api/events", {
+        method: "POST",
+        body: json({ from: "tablet", ...body }),
+      });
+    const classId = current.data.classes[0].id;
+    await event({ type: "raffle-start", classId, choices: [0, 1], winner: 1 });
+    await until(() => !$("winnerOverlay").hidden);
+    assert.equal($("winnerName").textContent, "Bruno");
+    await event({ type: "winner-point" });
+    await until(() => $("winnerPoint").disabled);
+    await event({ type: "winner-close" });
+    await until(() => $("winnerOverlay").hidden);
+    // …and the "Atenção, turma!" countdown with its result.
+    await event({ type: "attention-start" });
+    await until(() => !$("attentionOverlay").hidden);
+    await event({ type: "attention-noisy", before: 5, after: 4 });
+    await until(() => /5 → 4/.test($("attentionResult").textContent));
+    await event({ type: "attention-close" });
+    await until(() => $("attentionOverlay").hidden);
+    // A roleta started here is shared with the other devices.
+    const { seq } = await (await fetch(base + "api/events")).json();
+    $("draw").click();
+    const shared = await (await fetch(base + "api/events?after=" + seq)).json();
+    assert.equal(shared.events[0].type, "raffle-start");
+    assert.equal(shared.events[0].classId, classId);
   } finally {
     for (const timer of timers) clearTimeout(timer);
     w.close();

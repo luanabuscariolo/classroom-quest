@@ -16,6 +16,11 @@ import { validateWorkspace } from "../src/model.js";
 
 export const ROOM_PORT = 4180;
 const MAX_BODY = 20 * 1024 * 1024;
+// Live events (roleta, "Atenção, turma!"): kept briefly, sent at once to the
+// devices waiting for them (long polling).
+const EVENT_MAX_BODY = 64 * 1024;
+const EVENT_WAIT = 25000;
+const EVENTS_KEPT = 50;
 // A copy of the data at most every 10 minutes; the newest 100 are kept, plus
 // the first copy of every day.
 const COPY_EVERY = 10 * 60 * 1000;
@@ -98,13 +103,13 @@ function send(response, status, body) {
   });
   response.end(typeof body === "string" ? body : JSON.stringify(body));
 }
-function readBody(request) {
+function readBody(request, limit = MAX_BODY) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
     request.on("data", (chunk) => {
       size += chunk.length;
-      if (size > MAX_BODY) {
+      if (size > limit) {
         reject(Error("Dados demasiado grandes."));
         request.destroy();
       } else chunks.push(chunk);
@@ -160,8 +165,56 @@ export async function createRoom({
   }
   let version = data ? Math.max(1, room.version || 0) : 0,
     lastCopy = 0,
-    writes = Promise.resolve();
-  const failures = [];
+    writes = Promise.resolve(),
+    eventSeq = 0;
+  const failures = [],
+    events = [],
+    waiting = new Set();
+
+  /** Events after `after`, with their age so late ones can be ignored. */
+  function eventsAfter(after) {
+    const now = Date.now();
+    return JSON.stringify({
+      seq: eventSeq,
+      events: events
+        .filter((e) => e.seq > after)
+        .map((e) => ({ ...e.body, seq: e.seq, age: now - e.at })),
+    });
+  }
+  async function postEvent(request, response) {
+    let body;
+    try {
+      body = JSON.parse(await readBody(request, EVENT_MAX_BODY));
+    } catch {
+      return send(response, 400, { error: "Pedido inválido." });
+    }
+    if (!body || typeof body.type !== "string")
+      return send(response, 400, { error: "Pedido inválido." });
+    events.push({ seq: ++eventSeq, at: Date.now(), body });
+    if (events.length > EVENTS_KEPT) events.shift();
+    for (const wake of [...waiting]) wake();
+    send(response, 200, { seq: eventSeq });
+  }
+  function getEvents(request, response) {
+    const after = new URL(request.url, "http://x").searchParams.get("after");
+    // First call: start from now, never replay old events.
+    if (after === null || events.every((e) => e.seq <= Number(after))) {
+      if (after === null) return send(response, 200, eventsAfter(eventSeq));
+      const wake = () => {
+        clearTimeout(timer);
+        waiting.delete(wake);
+        send(response, 200, eventsAfter(Number(after)));
+      };
+      const timer = setTimeout(wake, EVENT_WAIT);
+      waiting.add(wake);
+      response.on("close", () => {
+        clearTimeout(timer);
+        waiting.delete(wake);
+      });
+      return;
+    }
+    send(response, 200, eventsAfter(Number(after)));
+  }
 
   async function saveRoom() {
     await atomicWrite(roomFile, JSON.stringify(room, null, 2));
@@ -273,6 +326,8 @@ export async function createRoom({
       );
     }
     if (route === "PUT /api/workspace") return put(request, response);
+    if (route === "POST /api/events") return postEvent(request, response);
+    if (route === "GET /api/events") return getEvents(request, response);
     // Shown on this PC only, to pair the tablet.
     if (route === "GET /api/info" && isLocal(request))
       return send(response, 200, {

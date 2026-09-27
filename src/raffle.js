@@ -15,7 +15,8 @@ const WHEEL_SIZE = 900,
 /**
  * Name wheel for the students marked "no sorteio". While the presentation
  * window is open, it drives the animation timer so the wheel keeps turning
- * when the main window is minimised.
+ * when the main window is minimised. In room mode, a draw made on the tablet
+ * is shared (`share`) and the PC spins the same wheel onto the same winner.
  */
 export function createRaffle(app) {
   const {
@@ -30,6 +31,7 @@ export function createRaffle(app) {
     reducedMotion,
     replay,
     status,
+    share,
   } = app;
   let rolling = false,
     lastWinner = -1,
@@ -96,7 +98,10 @@ export function createRaffle(app) {
       }, 50);
     }
   }
-  function cancel() {
+  /** `fromRoom`: cancelled on another device (not shared again). */
+  function cancel(fromRoom = false) {
+    if (!fromRoom && (rolling || !$("drawOverlay").hidden))
+      share("raffle-cancel");
     if (wheelFrame) cancelWheelFrame();
     wheelFrame = null;
     if (drawTimer) clearTimeout(drawTimer);
@@ -184,10 +189,15 @@ export function createRaffle(app) {
     ctx.stroke();
     canvas.dataset.segments = choices.length;
   }
-  function draw() {
-    if (rolling) return;
+  /**
+   * Spin the wheel. `fromRoom` = { choices, winner } when the draw was made
+   * on another device: same students, same winner, nothing shared again.
+   */
+  function draw(fromRoom) {
+    if (rolling && !fromRoom) return;
+    if (rolling) cancel(true);
     const students = app.state.students,
-      choices = pool();
+      choices = fromRoom ? fromRoom.choices : pool();
     if (!choices.length) {
       $("drawOutput").textContent =
         "Marca pelo menos um jogador para o sorteio.";
@@ -200,7 +210,9 @@ export function createRaffle(app) {
     $("drawOutput").textContent = "A roleta está a girar…";
     clearHighlights();
     // The winner is chosen first; the wheel then eases out onto that segment.
-    const finalIndex = Math.floor(Math.random() * choices.length),
+    const finalIndex = fromRoom
+        ? fromRoom.winner
+        : Math.floor(Math.random() * choices.length),
       finalChoice = choices[finalIndex],
       tau = Math.PI * 2,
       arc = tau / choices.length,
@@ -209,6 +221,12 @@ export function createRaffle(app) {
     let started = null,
       previous = -1,
       lastTick = 0;
+    if (!fromRoom)
+      share("raffle-start", {
+        classId: app.state.id,
+        choices,
+        winner: finalIndex,
+      });
     playSound("start");
     $("drawLabel").textContent = "✦ ROLETA DA TURMA ✦";
     $("drawProgressFill").style.width = "0%";
@@ -282,13 +300,40 @@ export function createRaffle(app) {
     wheelFrame = scheduleWheelFrame(frame);
   }
 
-  $("draw").onclick = draw;
-  $("cancelDraw").onclick = cancel;
+  function pointGiven() {
+    $("winnerPoint").disabled = true;
+    $("winnerPoint").textContent = "✓ Ponto atribuído";
+  }
+
+  /** Room mode: show what happened to the roleta on another device. */
+  function fromRoom(e) {
+    const students = app.state.students;
+    if (e.type === "raffle-start") {
+      const valid =
+        !$("gameMain").hidden &&
+        e.classId === app.state.id &&
+        Array.isArray(e.choices) &&
+        e.choices.length > 0 &&
+        e.choices.every((i) => Number.isInteger(i) && students[i]?.name) &&
+        Number.isInteger(e.winner) &&
+        e.winner >= 0 &&
+        e.winner < e.choices.length;
+      if (!valid) return;
+      $("winnerOverlay").hidden = true;
+      draw({ choices: e.choices, winner: e.winner });
+    } else if (e.type === "raffle-cancel") {
+      if (rolling) cancel(true);
+    } else if (e.type === "winner-point") pointGiven();
+    else if (e.type === "winner-close") $("winnerOverlay").hidden = true;
+  }
+
+  $("draw").onclick = () => draw();
+  $("cancelDraw").onclick = () => cancel();
   $("winnerPoint").onclick = function () {
     if (lastWinner < 0) return;
     addPoints(lastWinner, 1);
-    this.disabled = true;
-    this.textContent = "✓ Ponto atribuído";
+    pointGiven();
+    share("winner-point");
   };
 
   return {
@@ -299,5 +344,6 @@ export function createRaffle(app) {
     stop,
     clearHighlights,
     onPresentationClose,
+    fromRoom,
   };
 }

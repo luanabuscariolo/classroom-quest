@@ -551,7 +551,9 @@ function closeOverlay(id) {
   if (id === "attentionOverlay") {
     attention.stop();
     document.body.classList.remove("silence-active");
+    share("attention-close");
   }
+  if (id === "winnerOverlay") share("winner-close");
   $(id).hidden = true;
   if (returnFocus && returnFocus.focus) returnFocus.focus();
 }
@@ -768,8 +770,17 @@ function reloadWorkspace() {
   buildCards();
   syncAll();
 }
-/** Changes from the PC wait while a window (Registo, Avaliação…) is open. */
-const noOpenWindow = () => !document.querySelector(".overlay:not([hidden])");
+/**
+ * Changes from the PC wait while a window (Registo, Avaliação…) is open. The
+ * roleta and "Atenção, turma!" do not hold them back.
+ */
+const LIVE_OVERLAYS = ["drawOverlay", "winnerOverlay", "attentionOverlay"];
+const noOpenWindow = () =>
+  [...document.querySelectorAll(".overlay:not([hidden])")].every((o) =>
+    LIVE_OVERLAYS.includes(o.id),
+  );
+/** Room mode: tell the other devices (the projector) what just happened. */
+const share = (type, details) => room?.send(type, details);
 
 // ── Controllers ─────────────────────────────────────────────────────────────
 
@@ -851,6 +862,7 @@ const raffle = createRaffle(
     reducedMotion,
     replay,
     status,
+    share,
     setReturnFocus(node) {
       returnFocus = node;
     },
@@ -865,6 +877,7 @@ const attention = createAttention(
     replay,
     changeLife,
     status,
+    share,
   }),
 );
 const teams = createTeams(
@@ -942,6 +955,10 @@ if (isRoom()) {
     $,
     canApply: noOpenWindow,
     onRemoteChange: reloadWorkspace,
+    onEvent(e) {
+      raffle.fromRoom(e);
+      attention.fromRoom(e);
+    },
   });
 }
 persistence.load();

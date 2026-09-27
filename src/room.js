@@ -8,6 +8,8 @@ export const ROOM_TOKEN = "tic-quest.room.token";
 export const ROOM_PENDING = "tic-quest.room.pending";
 const POLL_MS = 1500;
 const RETRY_MS = 3000;
+// A live event older than this (network was down) is not shown any more.
+const EVENT_MAX_AGE = 5000;
 
 /** Room mode: the page was served by "TIC Quest · Sala" on the teacher's PC. */
 export const isRoom = (doc = document) =>
@@ -28,8 +30,10 @@ const withoutActiveClass = (text) =>
  * - `canApply()`: false while this device is in the middle of something
  *   (an open window), so changes from the PC wait.
  * - `onRemoteChange()`: the data changed on another device.
+ * - `onEvent(event)`: a live event from another device (roleta, "Atenção,
+ *   turma!"), sent with `send(type, details)`.
  */
-export async function connectRoom({ $, canApply, onRemoteChange }) {
+export async function connectRoom({ $, canApply, onRemoteChange, onEvent }) {
   const local = window.localStorage,
     isHost = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
   const read = (key) => {
@@ -290,8 +294,39 @@ export async function connectRoom({ $, canApply, onRemoteChange }) {
   renderStatus();
   setTimeout(poll, cache !== synced ? 0 : POLL_MS);
 
+  // ── Live events ────────────────────────────────────────────────────────
+  // The PC answers as soon as there is an event (or after 25 s with none),
+  // so the projector shows the roleta at the same time as the tablet.
+  const me = Math.random().toString(36).slice(2);
+  let eventSeq = null;
+  async function listen() {
+    try {
+      const r = await api(
+        "GET",
+        "events" + (eventSeq === null ? "" : "?after=" + eventSeq),
+      );
+      if (!r.ok) throw Error();
+      const body = await r.json();
+      eventSeq = body.seq;
+      for (const e of body.events)
+        if (e.from !== me && e.age < EVENT_MAX_AGE) onEvent(e);
+    } catch {
+      await sleep(RETRY_MS);
+    }
+    if (alive()) setTimeout(listen, 0);
+  }
+  listen();
+  function send(type, details = {}) {
+    api("POST", "events", JSON.stringify({ ...details, type, from: me })).catch(
+      () => {
+        // Without a connection the projector just misses this animation.
+      },
+    );
+  }
+
   return {
     isHost,
+    send,
     storage: {
       getItem(key) {
         if (key === STORE) return cache;
