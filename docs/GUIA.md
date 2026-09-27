@@ -118,7 +118,12 @@ flowchart TB
 | `diary.js`            |   ~510 | Ecrã ✎ Registo: aula do dia (sumário, atividades, TPC, nota da turma), histórico por dia, backup e sair.                               |
 | `diary-data.js`       |   ~210 | Regras do diário sem ecrã: criar aula, quem pode receber pontos de TPC, textos dos relatórios.                                         |
 | `grading.js`          |   ~290 | Regras e cálculo da nota do período (sem ecrã); exportação CSV.                                                                        |
-| `grades-ui.js`        |   ~550 | Janela ◆ Avaliação: acompanhamento, trabalhos, notas do período, modo Inovar, regras.                                                  |
+| `grades-ui.js`        |   ~100 | Janela ◆ Avaliação: período e separadores; cada separador tem o seu módulo (abaixo).                                                   |
+| `assessments-ui.js`   |   ~450 | Separador Trabalhos: todos os trabalhos do período ou a ficha de um (data, descrição, critérios e notas).                              |
+| `period-grades-ui.js` |   ~230 | Separadores Acompanhamento e Notas do período (modo Inovar, exportação CSV).                                                           |
+| `rules-ui.js`         |   ~155 | Separador Regras: pesos, valor de cada marcação e períodos.                                                                            |
+| `grade-explain.js`    |    ~80 | Painel "Como foi calculada" (tocar num aluno).                                                                                         |
+| `grades-format.js`    |     ~7 | Formato dos números nas tabelas (vírgula decimal, "—").                                                                                |
 | `performance.js`      |   ~220 | Separador Desempenho: histórico aula a aula, uma aula, média até uma aula.                                                             |
 | `lesson-log.js`       |   ~250 | Grelha de alunos do Registo; `MARKS` com as opções e emojis de cada marcação.                                                          |
 | `model.js`            |   ~390 | Valida e normaliza dados; converte formatos antigos; define `VERSION` (13).                                                            |

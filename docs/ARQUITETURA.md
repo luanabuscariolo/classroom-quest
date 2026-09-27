@@ -57,7 +57,7 @@ As regras (numeração de aulas, quem pode receber pontos de TPC, ligação `awa
 
 ## Notas do período (versão 12)
 
-Os registos guardam factos (presença, comportamento, participação, material, notas 0–100 dos trabalhos); a nota nunca é gravada. `grading.js` calcula-a a partir desses factos e das regras em `workspace.grading`, por isso as regras podem mudar a qualquer momento. o ✎ Registo grava cada marcação logo, diretamente no diário da turma; `grades-ui.js` (◆ Avaliação) edita trabalhos e regras. Nenhum destes ecrãs é copiado para a apresentação.
+Os registos guardam factos (presença, comportamento, participação, material, notas 0–100 dos trabalhos); a nota nunca é gravada. `grading.js` calcula-a a partir desses factos e das regras em `workspace.grading`, por isso as regras podem mudar a qualquer momento. o ✎ Registo grava cada marcação logo, diretamente no diário da turma; `grades-ui.js` (◆ Avaliação) abre a janela e escolhe o separador; cada separador tem o seu módulo: `performance.js` (Desempenho), `period-grades-ui.js` (Acompanhamento e Notas do período), `assessments-ui.js` (Trabalhos), `rules-ui.js` (Regras) e `grade-explain.js` ("Como foi calculada"). Nenhum destes ecrãs é copiado para a apresentação.
 
 Desde a versão 13, cada trabalho tem ficha própria: data, descrição e, se o professor quiser, critérios com pesos que somam 100. Com critérios, guarda-se a nota de cada critério (`marks`) e a nota do trabalho é calculada por `assessmentScore` (Σ nota × peso ÷ 100, só quando todos os critérios têm nota e os pesos somam 100); `scores` fica vazio, para a nota existir num só sítio.
 

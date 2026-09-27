@@ -74,33 +74,33 @@ Os testes usam apenas dados fictícios. Nunca acrescente backups reais como fixt
 
 ### Organização
 
-| Local                                            | Responsabilidade                                                                           |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `manifest.webmanifest`, `sw.js`                  | App instalável e uso sem internet                                                          |
-| `index.html`                                     | Estrutura da interface (sem CSS nem JavaScript embutidos)                                  |
-| `assets/css/`                                    | Estilos por área: base, feedback, jogo, gestão, diário, apresentação                       |
-| `assets/images/`                                 | Cenário e folhas de sprites (WebP)                                                         |
-| `src/app.js`                                     | Ponto de entrada: tabuleiro de jogo, overlays e ligação dos módulos                        |
-| `src/diary.js`, `src/lesson-log.js`              | ✎ Registo: aula do dia (grelha de alunos, sumário, TPC, nota da turma) e histórico por dia |
-| `src/diary-data.js`                              | Regras do diário (aulas, prémios de TPC) e textos dos relatórios, sem DOM                  |
-| `src/grades-ui.js`, `src/performance.js`         | Janela de avaliação e tabela de desempenho                                                 |
-| `src/grading.js`                                 | Regras e cálculo da nota do período, exportação CSV (sem DOM)                              |
-| `src/hub.js`, `src/teacher.js`                   | Lista de turmas e perfil do professor                                                      |
-| `src/roster.js`, `src/teams.js`                  | Nomes/avatares dos alunos e equipas                                                        |
-| `src/activities.js`, `src/raffle.js`             | Pontos por atividade e roleta de sorteio                                                   |
-| `src/attention.js`                               | Contagem "Atenção, turma!"                                                                 |
-| `src/backup-ui.js`                               | Ecrãs de backup, importação e avisos de gravação                                           |
-| `src/students.js`                                | Identidade dos alunos: IDs, correção de nome e remoção                                     |
-| `src/persistence.js`, `src/storage.js`           | Dono do workspace; gravação local e deteção de conflitos                                   |
-| `src/model.js`                                   | Validação e normalização dos dados; compatibilidade de versões                             |
-| `src/backup.js`                                  | Formato do backup e verificação de integridade                                             |
-| `src/points.js`                                  | Condições para anular pontos em segurança                                                  |
-| `src/avatars.js`, `src/audio.js`                 | Personagens e sons sintetizados                                                            |
-| `src/presentation.js`, `src/presentation-dom.js` | Janela de apresentação e atualização do seu DOM                                            |
-| `src/dom.js`, `src/utils.js`, `src/theme.js`     | Utilitários de DOM e datas; temas de cores                                                 |
-| `tests/`                                         | Testes de dados, persistência e fluxos integrados (com jsdom)                              |
-| `tools/`                                         | Servidor local, preparação de `dist/` e turma de demonstração                              |
-| `docs/`                                          | Guia completo, arquitetura e revisão técnica                                               |
+| Local                                                                                                                                          | Responsabilidade                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `manifest.webmanifest`, `sw.js`                                                                                                                | App instalável e uso sem internet                                                          |
+| `index.html`                                                                                                                                   | Estrutura da interface (sem CSS nem JavaScript embutidos)                                  |
+| `assets/css/`                                                                                                                                  | Estilos por área: base, feedback, jogo, gestão, diário, apresentação                       |
+| `assets/images/`                                                                                                                               | Cenário e folhas de sprites (WebP)                                                         |
+| `src/app.js`                                                                                                                                   | Ponto de entrada: tabuleiro de jogo, overlays e ligação dos módulos                        |
+| `src/diary.js`, `src/lesson-log.js`                                                                                                            | ✎ Registo: aula do dia (grelha de alunos, sumário, TPC, nota da turma) e histórico por dia |
+| `src/diary-data.js`                                                                                                                            | Regras do diário (aulas, prémios de TPC) e textos dos relatórios, sem DOM                  |
+| `src/grades-ui.js` e módulos dos separadores (`performance.js`, `assessments-ui.js`, `period-grades-ui.js`, `rules-ui.js`, `grade-explain.js`) | Janela de avaliação: desempenho, trabalhos, notas do período e regras                      |
+| `src/grading.js`                                                                                                                               | Regras e cálculo da nota do período, exportação CSV (sem DOM)                              |
+| `src/hub.js`, `src/teacher.js`                                                                                                                 | Lista de turmas e perfil do professor                                                      |
+| `src/roster.js`, `src/teams.js`                                                                                                                | Nomes/avatares dos alunos e equipas                                                        |
+| `src/activities.js`, `src/raffle.js`                                                                                                           | Pontos por atividade e roleta de sorteio                                                   |
+| `src/attention.js`                                                                                                                             | Contagem "Atenção, turma!"                                                                 |
+| `src/backup-ui.js`                                                                                                                             | Ecrãs de backup, importação e avisos de gravação                                           |
+| `src/students.js`                                                                                                                              | Identidade dos alunos: IDs, correção de nome e remoção                                     |
+| `src/persistence.js`, `src/storage.js`                                                                                                         | Dono do workspace; gravação local e deteção de conflitos                                   |
+| `src/model.js`                                                                                                                                 | Validação e normalização dos dados; compatibilidade de versões                             |
+| `src/backup.js`                                                                                                                                | Formato do backup e verificação de integridade                                             |
+| `src/points.js`                                                                                                                                | Condições para anular pontos em segurança                                                  |
+| `src/avatars.js`, `src/audio.js`                                                                                                               | Personagens e sons sintetizados                                                            |
+| `src/presentation.js`, `src/presentation-dom.js`                                                                                               | Janela de apresentação e atualização do seu DOM                                            |
+| `src/dom.js`, `src/utils.js`, `src/theme.js`                                                                                                   | Utilitários de DOM e datas; temas de cores                                                 |
+| `tests/`                                                                                                                                       | Testes de dados, persistência e fluxos integrados (com jsdom)                              |
+| `tools/`                                                                                                                                       | Servidor local, preparação de `dist/` e turma de demonstração                              |
+| `docs/`                                                                                                                                        | Guia completo, arquitetura e revisão técnica                                               |
 
 Para compreender o projeto de ponta a ponta (ficheiros, dados, versões, receitas de manutenção), comece pelo [guia completo](docs/GUIA.md). Antes de alterar fluxos com estado ou o formato dos dados, leia [a arquitetura](docs/ARQUITETURA.md). Os limites conhecidos e melhorias previstas estão na [revisão técnica](docs/REVISAO.md).
 
